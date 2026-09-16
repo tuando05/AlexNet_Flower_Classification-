@@ -1,0 +1,148 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Flower Classifier - AlexNet PyTorch</title>
+    <meta name="description" content="Ứng dụng phân loại 3 loại hoa (Hoa Hồng, Hoa Cúc, Hoa Ly) sử dụng mô hình Deep Learning AlexNet và PyTorch.">
+    <!-- Google Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Outfit:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <!-- Font Awesome Icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <!-- Custom CSS -->
+    <link rel="stylesheet" href="/static/style.css">
+</head>
+<body>
+    <div class="background-glob bg-glob-1"></div>
+    <div class="background-glob bg-glob-2"></div>
+    <div class="background-glob bg-glob-3"></div>
+
+    <div class="app-container">
+        <!-- Header Section -->
+        <header class="main-header">
+            <div class="logo-container">
+                <div class="logo-icon">
+                    <i class="fa-solid fa-seedling"></i>
+                </div>
+                <div>
+                    <h1 class="app-title">AlexNet Flower Classifier</h1>
+                    <p class="app-subtitle">Hệ thống nhận dạng & Phân loại Hoa Hồng (Rose), Hoa Cúc (Daisy), Hoa Ly (Lily) với PyTorch Deep Learning</p>
+                </div>
+            </div>
+            <div class="header-badges">
+                <span class="badge badge-pytorch"><i class="fa-solid fa-fire"></i> PyTorch</span>
+                <span class="badge badge-alexnet"><i class="fa-solid fa-brain"></i> AlexNet</span>
+                <span class="badge badge-fastapi"><i class="fa-solid fa-bolt"></i> FastAPI</span>
+            </div>
+        </header>
+
+        <!-- Main Content Layout -->
+        <main class="main-grid">
+            <!-- Left Panel: Input & Controls -->
+            <section class="panel glass-panel upload-panel">
+                <h2 class="panel-title"><i class="fa-solid fa-cloud-arrow-up"></i> Tải Ảnh Hoa Dự Đoán</h2>
+
+                <div class="drop-zone" id="dropZone">
+                    <input type="file" id="fileInput" accept="image/*" class="file-input">
+                    <div class="drop-zone-content" id="dropZoneContent">
+                        <div class="upload-icon-wrapper">
+                            <i class="fa-solid fa-image"></i>
+                        </div>
+                        <p class="drop-text">Kéo & thả ảnh hoa vào đây hoặc <span class="browse-btn">Chọn tệp ảnh</span></p>
+                        <p class="drop-subtext">Hỗ trợ định dạng PNG, JPG, JPEG, BMP (Max 10MB)</p>
+                    </div>
+                    
+                    <div class="preview-wrapper hidden" id="previewWrapper">
+                        <img id="imagePreview" src="" alt="Ảnh hoa được chọn" class="image-preview">
+                        <button class="remove-btn" id="removeBtn" title="Xóa ảnh"><i class="fa-solid fa-xmark"></i></button>
+                    </div>
+                </div>
+
+                <div class="action-buttons">
+                    <button class="btn btn-primary" id="predictBtn" disabled>
+                        <span class="btn-text"><i class="fa-solid fa-wand-magic-sparkles"></i> Phân Loại Ngay</span>
+                        <div class="spinner hidden" id="spinner"></div>
+                    </button>
+                </div>
+
+                <!-- Sample Images Quick Selection -->
+                <div class="samples-section">
+                    <h3 class="samples-title"><i class="fa-solid fa-wand-magic"></i> Hoặc chọn mẫu ảnh thử nghiệm:</h3>
+                    <div class="samples-grid">
+                        <div class="sample-card" data-sample="rose">
+                            <div class="sample-img-placeholder rose-bg">🌹</div>
+                            <span>Hoa Hồng</span>
+                        </div>
+                        <div class="sample-card" data-sample="daisy">
+                            <div class="sample-img-placeholder daisy-bg">🌼</div>
+                            <span>Hoa Cúc</span>
+                        </div>
+                        <div class="sample-card" data-sample="lily">
+                            <div class="sample-img-placeholder lily-bg">🪷</div>
+                            <span>Hoa Ly</span>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Right Panel: Results & Probability Visualization -->
+            <section class="panel glass-panel results-panel">
+                <h2 class="panel-title"><i class="fa-solid fa-square-poll-vertical"></i> Kết Quả Phân Loại</h2>
+
+                <div class="empty-state" id="emptyState">
+                    <div class="empty-icon"><i class="fa-solid fa-flower-tulip"></i></div>
+                    <h3>Chưa có kết quả dự đoán</h3>
+                    <p>Hãy tải lên một bức ảnh hoa ở khung bên trái và bấm <strong>Phân Loại Ngay</strong> để nhận kết quả phân tích độ tin cậy từ AlexNet.</p>
+                </div>
+
+                <div class="results-content hidden" id="resultsContent">
+                    <!-- Top Prediction Winner Card -->
+                    <div class="winner-card" id="winnerCard">
+                        <div class="winner-header">
+                            <span class="winner-label">Dự Đoán Chính Xác Nhất</span>
+                            <span class="confidence-badge" id="confidenceBadge">98.5%</span>
+                        </div>
+                        <div class="winner-body">
+                            <div class="flower-icon" id="flowerIcon">🌹</div>
+                            <div>
+                                <h3 class="winner-name-vi" id="winnerNameVi">Hoa Hồng</h3>
+                                <p class="winner-name-en" id="winnerNameEn">Rose (Class ID: rose)</p>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Probability Bars Breakdown -->
+                    <div class="probabilities-section">
+                        <h3 class="prob-section-title">Phân Phối Độ Tin Cậy Xác Suất</h3>
+                        <div class="prob-list" id="probList">
+                            <!-- Dynamically generated progress bars -->
+                        </div>
+                    </div>
+
+                    <!-- Model Info Footer -->
+                    <div class="info-footer">
+                        <div class="info-item">
+                            <i class="fa-solid fa-microchip"></i>
+                            <span>Kiến trúc: <strong>AlexNet PyTorch</strong></span>
+                        </div>
+                        <div class="info-item">
+                            <i class="fa-solid fa-bullseye"></i>
+                            <span>Độ phân giải: <strong>224x224 RGB</strong></span>
+                        </div>
+                    </div>
+                </div>
+            </section>
+        </main>
+
+        <!-- Footer -->
+        <footer class="app-footer">
+            <p>© 2026 AlexNet Flower Classification Project • Developed with PyTorch & FastAPI</p>
+        </footer>
+    </div>
+
+    <!-- Script -->
+    <script src="/static/script.js"></script>
+</body>
+</html>

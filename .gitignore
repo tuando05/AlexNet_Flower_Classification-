@@ -1,0 +1,59 @@
+# Byte-compiled / Python cache
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+
+# Environments
+.venv/
+venv/
+env/
+ENV/
+env.bak/
+venv.bak/
+.env
+
+# Jupyter Notebook Checkpoints
+.ipynb_checkpoints/
+
+# Datasets & Data Folders
+flower_data_3classes/
+data/
+datasets/
+*.zip
+*.tar
+*.gz
+
+# Model Weights & Checkpoints (large files)
+checkpoints/*.pth
+checkpoints/*.pt
+checkpoints/*.onnx
+checkpoints/*.ckpt
+checkpoints/*.h5
+*.pth
+*.pt
+*.onnx
+
+# IDE & Editor Settings
+.vscode/
+.idea/
+*.swp
+*.swo
+*.sublime-project
+*.sublime-workspace
+
+# OS Generated Files
+.DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+ehthumbs.db
+Thumbs.db
+
+# Output artifacts & logs
+*.log
+runs/
+tb_logs/
+wandb/
