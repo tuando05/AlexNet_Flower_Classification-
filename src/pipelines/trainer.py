@@ -2,7 +2,7 @@ import os
 import sys
 
 # Ensure root directory is in python path
-BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+BASE_DIR = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 if BASE_DIR not in sys.path:
     sys.path.insert(0, BASE_DIR)
 
@@ -17,8 +17,9 @@ import torch.nn as nn
 import torch.optim as optim
 
 import config
-from src.model import build_model
-from src.dataset import create_dataloaders, prepare_flower_dataset
+from src.models.builder import build_model
+from src.data.dataloader import create_dataloaders
+from src.data.dataset import prepare_flower_dataset
 
 def train_model(model, train_loader, val_loader, criterion, optimizer, scheduler, num_epochs=15, device=config.DEVICE):
     """

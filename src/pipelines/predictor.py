@@ -2,7 +2,7 @@ import os
 import sys
 
 # Ensure root directory is in python path
-BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+BASE_DIR = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 if BASE_DIR not in sys.path:
     sys.path.insert(0, BASE_DIR)
 
@@ -11,8 +11,8 @@ import torch.nn.functional as F
 from PIL import Image
 
 import config
-from src.model import build_model
-from src.dataset import get_transforms
+from src.models.builder import build_model
+from src.data.transforms import get_transforms
 
 class FlowerPredictor:
     """
@@ -85,7 +85,6 @@ class FlowerPredictor:
 
 if __name__ == '__main__':
     predictor = FlowerPredictor()
-    # Test on a dummy image if called directly
     import numpy as np
     dummy_img = Image.fromarray(np.random.randint(0, 256, (224, 224, 3), dtype=np.uint8))
     result = predictor.predict_image(dummy_img)

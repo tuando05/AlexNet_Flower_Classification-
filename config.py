@@ -8,6 +8,7 @@ BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 DATA_DIR = os.path.join(BASE_DIR, "flower_data_3classes")
 CHECKPOINT_DIR = os.path.join(BASE_DIR, "checkpoints")
 MODEL_PATH = os.path.join(CHECKPOINT_DIR, "best_alexnet_flowers.pth")
+OUTPUT_DIR = os.path.join(BASE_DIR, "outputs")
 SAMPLE_DIR = os.path.join(BASE_DIR, "samples")
 
 # Dataset Configuration

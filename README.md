@@ -21,26 +21,32 @@ Dự án phân loại 3 loại hoa (**Hoa Hồng**, **Hoa Cúc**, **Hoa Ly**) s�
 
 ```
 DL/
-├── alexnet_flower_classification.ipynb # Notebook gốc huấn luyện Colab
-├── config.py                           # Cấu hình tham số dự án & Hyperparameters
-├── requirements.txt                    # Khai báo các thư viện phụ thuộc
-├── README.md                           # Hướng dẫn chi tiết
-├── checkpoints/                        # Thư mục chứa weights model (.pth)
+├── config.py                           # Cấu hình tham số trung tâm
+├── requirements.txt                    # Thư viện phụ thuộc
+├── README.md                           # Hướng dẫn chi tiết dự án
+├── notebooks/                          # Chứa Jupyter / Colab Notebooks
+│   └── alexnet_flower_classification.ipynb
+├── outputs/                            # Thư mục chứa báo cáo & đồ thị đánh giá
+│   └── confusion_matrix.png
+├── checkpoints/                        # Thư mục lưu weights (.pth)
 │   └── best_alexnet_flowers.pth
-├── src/                                # Core Machine Learning Modules
-│   ├── __init__.py
-│   ├── dataset.py                      # Data Loading, Augmentation & Splitting
-│   ├── model.py                        # Kiến trúc PyTorch AlexNet
-│   ├── train.py                        # Script Huấn luyện mô hình
-│   ├── evaluate.py                     # Script Đánh giá mô hình & vẽ Confusion Matrix
-│   └── inference.py                    # Class dự đoán (FlowerPredictor)
+├── src/                                # Core Modular ML Framework
+│   ├── __init__.py                     # High-level exports
+│   ├── data/                           # Module Quản lý Dữ liệu
+│   │   ├── transforms.py               # Data Augmentation & Preprocessing
+│   │   ├── dataset.py                  # Dataset Preparation & Splitting
+│   │   └── dataloader.py               # PyTorch DataLoaders Factory
+│   ├── models/                         # Module Kiến trúc Model
+│   │   ├── alexnet.py                  # AlexNet Scratch & Pretrained Transfer
+│   │   └── builder.py                  # Model Builder Factory
+│   └── pipelines/                      # Module Quy trình Xử lý ML
+│       ├── trainer.py                  # Training Loop Pipeline
+│       ├── evaluator.py                # Evaluation & Confusion Matrix Pipeline
+│       └── predictor.py                # Inference Engine
 └── app/                                # FastAPI Web Application
-    ├── main.py                         # Web Server & REST API Routes
-    ├── static/                         # Giao diện CSS & JavaScript
-    │   ├── style.css
-    │   └── script.js
-    └── templates/                      # Giao diện HTML5
-        └── index.html
+    ├── main.py                         # REST API & Routes
+    ├── static/                         # Giao diện CSS & JS
+    └── templates/                      # HTML Templates
 ```
 
 ---
@@ -58,17 +64,17 @@ pip install -r requirements.txt
 Chạy kịch bản huấn luyện PyTorch (Tự động nạp dữ liệu hoặc tạo dữ liệu mẫu nếu chưa có):
 
 ```bash
-python src/train.py
+python -m src.pipelines.trainer
 ```
 
 Sau khi hoàn tất, weights tốt nhất sẽ được tự động lưu vào `checkpoints/best_alexnet_flowers.pth`.
 
 ### 3. Đánh giá mô hình
 
-Đánh giá mô hình trên tập dữ liệu Test và xuất biểu đồ Confusion Matrix:
+Đánh giá mô hình trên tập dữ liệu Test và xuất biểu đồ Confusion Matrix vào `outputs/confusion_matrix.png`:
 
 ```bash
-python src/evaluate.py
+python -m src.pipelines.evaluator
 ```
 
 ### 4. Khởi chạy Ứng Dụng Web & REST API

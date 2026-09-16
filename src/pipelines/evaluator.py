@@ -2,7 +2,7 @@ import os
 import sys
 
 # Ensure root directory is in python path
-BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+BASE_DIR = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 if BASE_DIR not in sys.path:
     sys.path.insert(0, BASE_DIR)
 
@@ -19,8 +19,8 @@ import seaborn as sns
 from sklearn.metrics import classification_report, confusion_matrix
 
 import config
-from src.model import build_model
-from src.dataset import create_dataloaders
+from src.models.builder import build_model
+from src.data.dataloader import create_dataloaders
 
 def evaluate_model():
     """
@@ -65,7 +65,8 @@ def evaluate_model():
     plt.ylabel('Nhãn Thực Thể (True)')
     plt.tight_layout()
     
-    save_path = os.path.join(config.BASE_DIR, "confusion_matrix.png")
+    os.makedirs(config.OUTPUT_DIR, exist_ok=True)
+    save_path = os.path.join(config.OUTPUT_DIR, "confusion_matrix.png")
     plt.savefig(save_path)
     print(f"Lưu Confusion Matrix thành công tại: {save_path}")
     plt.close()

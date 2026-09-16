@@ -14,7 +14,7 @@ if BASE_DIR not in sys.path:
     sys.path.insert(0, BASE_DIR)
 
 import config
-from src.inference import FlowerPredictor
+from src.pipelines.predictor import FlowerPredictor
 
 app = FastAPI(
     title="Phân Loại Ảnh Hoa AlexNet API",

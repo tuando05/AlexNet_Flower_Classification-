@@ -16,11 +16,11 @@ venv.bak/
 
 # Jupyter Notebook Checkpoints
 .ipynb_checkpoints/
+notebooks/.ipynb_checkpoints/
 
 # Datasets & Data Folders
 flower_data_3classes/
-data/
-datasets/
+/datasets/
 *.zip
 *.tar
 *.gz
@@ -53,6 +53,8 @@ ehthumbs.db
 Thumbs.db
 
 # Output artifacts & logs
+outputs/*
+!outputs/.gitkeep
 *.log
 runs/
 tb_logs/

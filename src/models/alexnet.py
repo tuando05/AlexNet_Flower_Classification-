@@ -50,14 +50,3 @@ def get_alexnet_pretrained(num_classes=3):
     model = models.alexnet(weights=weights)
     model.classifier[6] = nn.Linear(4096, num_classes)
     return model
-
-
-def build_model(use_pretrained=False, num_classes=3, device='cpu'):
-    """
-    Build and return AlexNet model on specified device.
-    """
-    if use_pretrained:
-        model = get_alexnet_pretrained(num_classes=num_classes)
-    else:
-        model = AlexNetFromScratch(num_classes=num_classes)
-    return model.to(device)
