@@ -1,15 +1,17 @@
+import logging
 import os
 import random
 import shutil
 
 import config
 from src.data.downloader import (
-    IMAGE_EXTENSIONS,
     SPLIT_MAP,
     has_existing_data,
     list_images,
     download_and_filter_dataset,
 )
+
+logger = logging.getLogger(__name__)
 
 # Tỉ lệ chia dữ liệu khi người dùng truyền `source_path` thủ công
 TRAIN_RATIO = 0.8
@@ -76,9 +78,12 @@ def _split_dataset(source_path, target_base_dir, target_classes):
             for img_path in files:
                 shutil.copy2(img_path, os.path.join(dst_dir, os.path.basename(img_path)))
 
-        print(
-            f"  -> {cls_name}: {len(split_images['train'])} train / "
-            f"{len(split_images['val'])} val / {len(split_images['test'])} test"
+        logger.info(
+            "  %s: %d train / %d val / %d test",
+            cls_name,
+            len(split_images['train']),
+            len(split_images['val']),
+            len(split_images['test']),
         )
 
 
@@ -109,15 +114,15 @@ def prepare_flower_dataset(source_path=None, target_base_dir=config.DATA_DIR):
     if source_path:
         if not os.path.isdir(source_path):
             raise FileNotFoundError(f"Thư mục nguồn không tồn tại: '{source_path}'")
-        print(f"[PREPARE] Chia dữ liệu từ '{source_path}' vào '{target_base_dir}'...")
+        logger.info("Chia dữ liệu từ '%s' vào '%s'...", source_path, target_base_dir)
         _split_dataset(source_path, target_base_dir, target_classes)
         return True
 
     if has_existing_data(target_base_dir):
-        print(f"[INFO] Dữ liệu đã sẵn sàng tại: {target_base_dir}")
+        logger.info("Dữ liệu đã sẵn sàng tại: %s", target_base_dir)
         return True
 
-    print("[PREPARE] Dataset trống, đang tải bộ dữ liệu Kaggle v1...")
+    logger.info("Dataset trống, đang tải bộ dữ liệu Kaggle v1...")
     if download_and_filter_dataset(target_base_dir=target_base_dir):
         return True
 

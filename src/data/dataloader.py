@@ -20,7 +20,10 @@ def _ensure_split_ready(data_dir, split):
     """
     split_dir = os.path.join(data_dir, split)
     if not os.path.isdir(split_dir):
-        raise RuntimeError(f"Thiếu thư mục split '{split}': {split_dir}")
+        raise RuntimeError(
+            f"Thiếu thư mục split '{split}': {split_dir}\n"
+            f"  Hãy chạy: python download_data.py --force"
+        )
 
     empty_classes = [
         cls for cls in config.TARGET_CLASSES

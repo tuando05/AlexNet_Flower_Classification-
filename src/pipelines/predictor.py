@@ -1,3 +1,4 @@
+import logging
 import os
 import sys
 
@@ -13,14 +14,17 @@ from PIL import Image
 import config
 from src.models.builder import build_model, load_trained_model
 from src.data.transforms import get_transforms
-from src.utils.console import setup_console
 
-setup_console()
+logger = logging.getLogger('src.pipelines.predictor')
 
 
 class FlowerPredictor:
     """
     Inference helper class for flower image classification.
+
+    Kiến trúc và thứ tự lớp luôn được đọc từ chính checkpoint, nên có thể
+    load đồng thời các checkpoint train bằng cấu hình khác nhau
+    (scratch / pre-trained) mà không cần sửa `config`.
     """
 
     def __init__(self, model_path=config.MODEL_PATH, device=config.DEVICE):
@@ -33,15 +37,13 @@ class FlowerPredictor:
         _, self.transform = get_transforms()
 
         if self.is_trained:
-            # Kiến trúc + thứ tự lớp được đọc từ checkpoint để luôn khớp với
-            # không gian nhãn mà model đã được huấn luyện.
             self.model, self.metadata, self.class_names = load_trained_model(
                 model_path=model_path,
                 device=device,
                 default_classes=config.TARGET_CLASSES,
             )
-            print(f"Loaded trained model checkpoint from: {model_path}")
-            print(f"Classes (from checkpoint): {self.class_names}")
+            logger.info("Đã load checkpoint: %s", model_path)
+            logger.info("Các lớp (từ checkpoint): %s", self.class_names)
         else:
             self.class_names = list(config.TARGET_CLASSES)
             self.model = build_model(
@@ -50,9 +52,9 @@ class FlowerPredictor:
                 device=device,
             )
             self.model.eval()
-            print(
-                f"Warning: Checkpoint '{model_path}' not found! "
-                "Model will use un-trained random weights."
+            logger.warning(
+                "Không tìm thấy checkpoint '%s'! Mô hình sẽ dùng trọng số ngẫu nhiên chưa huấn luyện.",
+                model_path,
             )
 
     def predict_image(self, image_input):
@@ -100,7 +102,13 @@ class FlowerPredictor:
 if __name__ == '__main__':
     import numpy as np
 
+    from src.utils.console import setup_console
+    from src.utils.logger import setup_logging
+
+    setup_console()
+    setup_logging()
+
     predictor = FlowerPredictor()
     dummy_img = Image.fromarray(np.random.randint(0, 256, (224, 224, 3), dtype=np.uint8))
     result = predictor.predict_image(dummy_img)
-    print("Test Prediction Output:", result)
+    logger.info("Kết quả dự đoán thử: %s", result)

@@ -30,11 +30,13 @@ if os.path.exists(venv_site_packages) and venv_site_packages not in sys.path:
 import config
 from src.data.downloader import KAGGLE_DATASET_HANDLE, download_and_filter_dataset
 from src.utils.console import setup_console
-
-setup_console()
+from src.utils.logger import setup_logging
 
 
 def main():
+    setup_console()
+    setup_logging()
+
     parser = argparse.ArgumentParser(description="Tai va loc du lieu Kaggle 3 loai hoa")
     parser.add_argument("--force", action="store_true", help="Xoa du lieu cu va tai lai")
     parser.add_argument("--target-dir", type=str, default=config.DATA_DIR, help="Thu muc dich luu du lieu")

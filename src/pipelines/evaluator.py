@@ -1,3 +1,4 @@
+import logging
 import os
 import sys
 
@@ -7,12 +8,10 @@ if BASE_DIR not in sys.path:
     sys.path.insert(0, BASE_DIR)
 
 from src.utils.console import setup_console
+from src.utils.logger import setup_logging
+from src.utils.plotting import configure_matplotlib_backend
 
-setup_console()
-
-import matplotlib
-matplotlib.use('Agg')  # Script chỉ lưu hình, không cần cửa sổ hiển thị
-
+configure_matplotlib_backend()
 import matplotlib.pyplot as plt
 import numpy as np
 import seaborn as sns
@@ -22,6 +21,8 @@ from sklearn.metrics import classification_report, confusion_matrix, f1_score
 import config
 from src.models.builder import load_trained_model
 from src.data.dataloader import create_dataloaders
+
+logger = logging.getLogger('src.pipelines.evaluator')
 
 
 def evaluate_model():
@@ -33,7 +34,10 @@ def evaluate_model():
                      hoặc None nếu chưa có checkpoint.
     """
     if not os.path.exists(config.MODEL_PATH):
-        print(f"Error: Model checkpoint not found at {config.MODEL_PATH}. Please train the model first.")
+        logger.error(
+            "Không tìm thấy checkpoint tại %s. Hãy huấn luyện mô hình trước.",
+            config.MODEL_PATH,
+        )
         return None
 
     _, _, test_loader, loader_classes = create_dataloaders()
@@ -45,16 +49,17 @@ def evaluate_model():
     )
 
     if metadata:
-        print(
-            f"Checkpoint info: epoch={metadata.get('epoch')} | "
-            f"val_acc={metadata.get('val_acc')} | arch={metadata.get('arch')} | "
-            f"use_pretrained={metadata.get('use_pretrained')}"
+        logger.info(
+            "Thông tin checkpoint: epoch=%s | val_acc=%s | arch=%s | use_pretrained=%s",
+            metadata.get('epoch'), metadata.get('val_acc'),
+            metadata.get('arch'), metadata.get('use_pretrained'),
         )
 
     if list(class_names) != list(loader_classes):
-        print(
-            "[WARN] Thứ tự lớp trong checkpoint khác thứ tự của ImageFolder "
-            f"({class_names} vs {loader_classes}) -> kết quả đánh giá có thể bị sai lệch."
+        logger.warning(
+            "Thứ tự lớp trong checkpoint khác thứ tự của ImageFolder "
+            "(%s vs %s) -> kết quả đánh giá có thể bị sai lệch.",
+            class_names, loader_classes,
         )
 
     model.eval()
@@ -62,7 +67,7 @@ def evaluate_model():
     all_preds = []
     all_labels = []
 
-    print("Evaluating model on test dataset...")
+    logger.info("Đang đánh giá mô hình trên tập test...")
     with torch.no_grad():
         for inputs, labels in test_loader:
             inputs = inputs.to(config.DEVICE)
@@ -74,12 +79,13 @@ def evaluate_model():
 
     report = classification_report(all_labels, all_preds, target_names=loader_classes)
 
-    print("\n================ BÁO CÁO ĐÁNH GIÁ TẬP TEST ================")
-    print(report)
+    logger.info("================ BÁO CÁO ĐÁNH GIÁ TẬP TEST ================")
+    for line in report.splitlines():
+        logger.info("%s", line)
 
     accuracy = float((np.array(all_preds) == np.array(all_labels)).mean())
     macro_f1 = float(f1_score(all_labels, all_preds, average='macro'))
-    print(f"Accuracy: {accuracy:.4f} | Macro F1: {macro_f1:.4f}")
+    logger.info("Accuracy: %.4f | Macro F1: %.4f", accuracy, macro_f1)
 
     cm = confusion_matrix(all_labels, all_preds)
     plt.figure(figsize=(7, 5))
@@ -92,11 +98,13 @@ def evaluate_model():
     os.makedirs(config.OUTPUT_DIR, exist_ok=True)
     save_path = os.path.join(config.OUTPUT_DIR, "confusion_matrix.png")
     plt.savefig(save_path)
-    print(f"Lưu Confusion Matrix thành công tại: {save_path}")
+    logger.info("Đã lưu Confusion Matrix tại: %s", save_path)
     plt.close()
 
     return {'accuracy': accuracy, 'macro_f1': macro_f1, 'class_names': list(loader_classes)}
 
 
 if __name__ == '__main__':
+    setup_console()
+    setup_logging()
     evaluate_model()

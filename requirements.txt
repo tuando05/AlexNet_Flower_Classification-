@@ -1,13 +1,29 @@
+# ============================================================
+# Phân Loại Ảnh Hoa AlexNet - Thư viện phụ thuộc
+# Phiên bản được pin theo môi trường đã kiểm thử (.venv, Python 3.12).
+# ============================================================
+
+# --- PyTorch (build CUDA 12.1) ---
+# Nếu máy chỉ có CPU, thay 2 dòng torch/torchvision bên dưới bằng:
+#   pip install torch==2.5.1 torchvision==0.20.1 --index-url https://download.pytorch.org/whl/cpu
 --extra-index-url https://download.pytorch.org/whl/cu121
-torch>=2.0.0
-torchvision>=0.15.0
-pillow>=9.5.0
-numpy>=1.24.0
-matplotlib>=3.7.0
-seaborn>=0.12.0
-scikit-learn>=1.2.0
-fastapi>=0.100.0
-uvicorn[standard]>=0.22.0
-python-multipart>=0.0.6
-jinja2>=3.1.2
-kagglehub>=0.2.0
+torch==2.5.1+cu121
+torchvision==0.20.1+cu121
+
+# --- Xử lý ảnh & số liệu ---
+pillow==12.3.0
+numpy==2.5.2
+
+# --- Đánh giá & trực quan hóa ---
+matplotlib==3.11.2
+seaborn==0.13.2
+scikit-learn==1.9.1
+
+# --- Web API (FastAPI) ---
+fastapi==0.141.1
+uvicorn[standard]==0.53.0
+python-multipart==0.0.32
+Jinja2==3.1.6
+
+# --- Tải dữ liệu ---
+kagglehub==1.0.2

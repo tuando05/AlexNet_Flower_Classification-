@@ -18,6 +18,11 @@ venv.bak/
 .ipynb_checkpoints/
 notebooks/.ipynb_checkpoints/
 
+# Pytest
+.pytest_cache/
+.coverage
+htmlcov/
+
 # Datasets & Data Folders
 flower_data_3classes/
 /datasets/

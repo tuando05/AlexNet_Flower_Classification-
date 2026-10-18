@@ -1,4 +1,5 @@
 import json
+import logging
 import os
 import sys
 import time
@@ -10,12 +11,10 @@ if BASE_DIR not in sys.path:
     sys.path.insert(0, BASE_DIR)
 
 from src.utils.console import setup_console
+from src.utils.logger import setup_logging
+from src.utils.plotting import configure_matplotlib_backend
 
-setup_console()
-
-import matplotlib
-matplotlib.use('Agg')  # Script chỉ lưu hình, không cần cửa sổ hiển thị
-
+configure_matplotlib_backend()
 import matplotlib.pyplot as plt
 import torch
 import torch.nn as nn
@@ -25,6 +24,8 @@ import config
 from src.models.builder import build_model
 from src.data.dataloader import create_dataloaders
 from src.utils.seed import set_seed
+
+logger = logging.getLogger('src.pipelines.trainer')
 
 
 def save_training_artifacts(history, class_names):
@@ -36,7 +37,7 @@ def save_training_artifacts(history, class_names):
     history_path = os.path.join(config.OUTPUT_DIR, "history.json")
     with open(history_path, 'w', encoding='utf-8') as f:
         json.dump(history, f, indent=2)
-    print(f"  --> Đã lưu lịch sử huấn luyện: {history_path}")
+    logger.info("Đã lưu lịch sử huấn luyện: %s", history_path)
 
     epochs = range(1, len(history['train_loss']) + 1)
     fig, (ax_loss, ax_acc) = plt.subplots(1, 2, figsize=(12, 4.5))
@@ -63,7 +64,7 @@ def save_training_artifacts(history, class_names):
     curves_path = os.path.join(config.OUTPUT_DIR, "training_curves.png")
     fig.savefig(curves_path, dpi=120)
     plt.close(fig)
-    print(f"  --> Đã lưu biểu đồ huấn luyện: {curves_path}")
+    logger.info("Đã lưu biểu đồ huấn luyện: %s", curves_path)
 
 
 def train_model(model, train_loader, val_loader, criterion, optimizer, scheduler, num_epochs=15,
@@ -84,9 +85,9 @@ def train_model(model, train_loader, val_loader, criterion, optimizer, scheduler
     best_epoch = 0
     epochs_without_improvement = 0
 
-    print(f"Starting training on device: {device}")
-    print(f"Epochs: {num_epochs} | Early stopping patience: {early_stopping_patience}")
-    print("-" * 50)
+    logger.info("Bắt đầu huấn luyện trên thiết bị: %s", device)
+    logger.info("Epochs: %d | Early stopping patience: %s", num_epochs, early_stopping_patience)
+    logger.info("-" * 60)
 
     for epoch in range(num_epochs):
         epoch_start = time.time()
@@ -143,10 +144,14 @@ def train_model(model, train_loader, val_loader, criterion, optimizer, scheduler
         history['val_acc'].append(epoch_val_acc)
 
         elapsed = time.time() - epoch_start
-        print(f"Epoch {epoch+1:02d}/{num_epochs:02d} | "
-              f"Train Loss: {epoch_train_loss:.4f} | Train Acc: {epoch_train_acc*100:.2f}% | "
-              f"Val Loss: {epoch_val_loss:.4f} | Val Acc: {epoch_val_acc*100:.2f}% | "
-              f"Time: {elapsed:.1f}s")
+        logger.info(
+            "Epoch %02d/%02d | Train Loss: %.4f | Train Acc: %.2f%% | "
+            "Val Loss: %.4f | Val Acc: %.2f%% | Time: %.1fs",
+            epoch + 1, num_epochs,
+            epoch_train_loss, epoch_train_acc * 100,
+            epoch_val_loss, epoch_val_acc * 100,
+            elapsed,
+        )
 
         # Chỉ lưu khi thực sự tốt hơn epoch trước (tránh ghi đè liên tục)
         if epoch_val_acc > best_val_acc:
@@ -167,27 +172,36 @@ def train_model(model, train_loader, val_loader, criterion, optimizer, scheduler
                 'learning_rate': config.LEARNING_RATE,
                 'trained_at': datetime.now().isoformat(timespec='seconds'),
             }, config.MODEL_PATH)
-            print(f"  --> Saved best model checkpoint (Val Acc: {best_val_acc*100:.2f}%) to {config.MODEL_PATH}")
+            logger.info(
+                "  --> Đã lưu checkpoint tốt nhất (Val Acc: %.2f%%) vào %s",
+                best_val_acc * 100, config.MODEL_PATH,
+            )
         else:
             epochs_without_improvement += 1
-            print(f"  --> Không cải thiện ({epochs_without_improvement}/{early_stopping_patience or '-'} epoch liên tiếp)")
+            logger.info(
+                "  --> Không cải thiện (%d/%s epoch liên tiếp)",
+                epochs_without_improvement, early_stopping_patience or '-',
+            )
 
         # Early stopping
         if early_stopping_patience and epochs_without_improvement >= early_stopping_patience:
-            print(f"  --> EARLY STOPPING tại epoch {epoch+1} (best epoch: {best_epoch})")
+            logger.info("  --> EARLY STOPPING tại epoch %d (best epoch: %d)", epoch + 1, best_epoch)
             break
 
-    print("-" * 50)
-    print(f"Training completed! Best Validation Accuracy: {best_val_acc*100:.2f}% (epoch {best_epoch})")
+    logger.info("-" * 60)
+    logger.info("Huấn luyện xong! Val Acc tốt nhất: %.2f%% (epoch %d)", best_val_acc * 100, best_epoch)
     return history
 
 
 def main():
+    setup_console()
+    setup_logging()
+
     set_seed(config.SEED)
 
     # create_dataloaders() tự chuẩn bị dataset và raise lỗi nếu thiếu dữ liệu
     train_loader, val_loader, _, class_names = create_dataloaders()
-    print(f"Loaded dataset classes: {class_names}")
+    logger.info("Các lớp của dataset: %s", class_names)
 
     model = build_model(
         use_pretrained=config.USE_PRETRAINED,

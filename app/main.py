@@ -1,4 +1,5 @@
 import io
+import logging
 import os
 import sys
 from PIL import Image
@@ -16,8 +17,12 @@ if BASE_DIR not in sys.path:
 import config
 from src.pipelines.predictor import FlowerPredictor
 from src.utils.console import setup_console
+from src.utils.logger import setup_logging
 
 setup_console()
+setup_logging()
+
+logger = logging.getLogger('app.main')
 
 app = FastAPI(
     title="Phân Loại Ảnh Hoa AlexNet API",
@@ -41,9 +46,12 @@ predictor = None
 @app.on_event("startup")
 async def startup_event():
     global predictor
-    print("Initializing FlowerPredictor instance...")
+    logger.info("Đang khởi tạo FlowerPredictor...")
     predictor = FlowerPredictor(model_path=config.MODEL_PATH, device=config.DEVICE)
-    print("FlowerPredictor initialized successfully.")
+    if predictor.is_trained:
+        logger.info("Khởi tạo FlowerPredictor thành công (đã có checkpoint).")
+    else:
+        logger.warning("FlowerPredictor khởi tạo nhưng CHƯA có checkpoint - kết quả dự đoán sẽ vô nghĩa.")
 
 
 @app.get("/", response_class=HTMLResponse)

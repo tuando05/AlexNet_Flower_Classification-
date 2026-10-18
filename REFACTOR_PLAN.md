@@ -96,17 +96,33 @@ nằm trong sai số chuẩn (~1.5 pp với 707 mẫu test) do dao động seed.
 
 ## 🟡 Phase 3 — Cấu trúc code & kiểm thử (1 ngày)
 
-- [ ] `P3.1` Thêm `tests/` (pytest):
-  - model forward → output shape `(N, 3)`
-  - transforms trả tensor `3×224×224`, normalize đúng
-  - `FlowerPredictor` với checkpoint giả → trả đủ 3 lớp, tổng xác suất ≈ 100%
-  - `download_data` dry-check cấu trúc thư mục
-- [ ] `P3.2` Thay `print()` bằng `logging` (module `src/utils/logger.py`).
+- [x] `P3.1` Thêm `tests/` (pytest) — **53 passed, 1 skipped (~8s)**
+  - `tests/test_model.py` — forward shape `(N, 3)`, `build_model` với nhiều `num_classes`, thay lớp cuối của bản pre-trained, tính nhất quán của `config`
+  - `tests/test_transforms.py` — shape `3×224×224`, kiểm tra **công thức normalize** trên ảnh đồng nhất, train transform ngẫu nhiên vs val transform tất định, ảnh không vuông / grayscale / RGBA
+  - `tests/test_checkpoint.py` — định dạng checkpoint mới & cũ, **`weights_only=False`**, thứ tự lớp lấy từ checkpoint, `use_pretrained` lấy từ checkpoint (chống hồi quy lỗi 1.4)
+  - `tests/test_predictor.py` — cấu trúc kết quả, tổng xác suất = 100%, top-1 khớp xác suất cao nhất, nhãn tiếng Việt, thiếu checkpoint, input không hợp lệ
+  - `tests/test_downloader.py` — lọc đuôi file, phát hiện dữ liệu có sẵn, dò cấu trúc Kaggle (không cần mạng)
+  - `tests/test_dataloader.py` — rào chắn thiếu split / lớp rỗng, thông báo lỗi có gợi ý cách sửa
+  - `tests/_helpers.py` — `TinyModel` để test nhanh, không cần load AlexNet 240MB
+  - `pytest.ini` — `testpaths`, loại trừ `.venv`/`flower_data_3classes`/`notebooks`/`outputs`/`checkpoints`
+- [x] `P3.2` Thay `print()` bằng `logging` (`src/utils/logger.py` + `setup_logging()` gọi ở entry point).
+      Các module thư viện chỉ dùng `logging.getLogger(...)`, không tự gắn handler.
+      Chỉ giữ `print()` cho banner CLI trong `download_data.py` (đúng mục đích).
 - [x] `P3.3` Thêm `src/utils/seed.py` (hàm `set_seed`) — *đã làm sớm ở Phase 1.7 vì cần cho việc tái lập kết quả.*
-- [ ] `P3.4` Pin phiên bản trong `requirements.txt` (hiện dùng `>=`, dễ vỡ môi trường).
-- [ ] `P3.5` Làm sạch notebook: chỉ import từ `src/` thay vì copy-paste code.
+- [x] `P3.4` Pin phiên bản trong `requirements.txt` (theo `.venv` đã kiểm thử) + tách `requirements-dev.txt` cho pytest.
+- [x] `P3.5` Làm sạch notebook: viết lại thành dạng mỏng **chỉ import từ `src/`**
+      (17 cell copy-paste → 21 cell, trong đó 11 cell code đều là import/glue ngắn).
+      Đã kiểm chứng bằng script chạy tuần tự toàn bộ cell code: **11/11 cell chạy thành công**
+      (ép `NUM_EPOCHS=1` + ghi vào thư mục tạm nên không đụng checkpoint v3).
 
-**Verify:** `pytest -q` pass toàn bộ.
+- [x] `P3.6` (Phát sinh) Thêm `src/utils/plotting.py::configure_matplotlib_backend()`:
+      chỉ dùng backend `Agg` khi chạy script, giữ backend inline khi chạy trong notebook
+      (trước đây `trainer`/`evaluator` ép `Agg` ở module-level nên biểu đồ sẽ không hiển thị trong notebook).
+
+**Verify:** ✅ `pytest -q` → **53 passed, 1 skipped**.
+Đã chạy lại cả `download_data.py`, `-m src.pipelines.trainer`, `-m src.pipelines.evaluator`,
+`-m src.pipelines.predictor` và notebook: tất cả hoạt động, log có format thống nhất,
+kết quả evaluator không đổi (0.9420 / 0.9452).
 
 ---
 
@@ -141,7 +157,7 @@ nằm trong sai số chuẩn (~1.5 pp với 707 mẫu test) do dao động seed.
 | 0 | Baseline + nhánh git | 0.5 ngày | ✅ | **XONG** |
 | 1 | Sửa lỗi đúng/sai | 1 ngày | ✅ | **XONG** |
 | 2 | Train lại + đánh giá | 1–1.5 ngày | ✅ | **XONG** — v3 transfer learning: 0.9420 / 0.9452 (`docs/training_report.md`) |
-| 3 | Test + cấu trúc code | 1 ngày | ⚠️ nên có | Chờ thực hiện |
+| 3 | Test + cấu trúc code | 1 ngày | ⚠️ nên có | **XONG** — 53 test pass, logging, pin version, notebook sạch |
 | 4 | Web app & UX | 0.5–1 ngày | ⚠️ nên có | Chờ thực hiện |
 | 5 | Tài liệu | 0.5 ngày | ✅ | Chờ thực hiện |
 
