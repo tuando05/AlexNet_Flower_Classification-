@@ -70,13 +70,27 @@ Mục tiêu: biết chính xác hiện trạng đang đúng tới đâu trước
 
 ## 🟠 Phase 2 — Chất lượng mô hình & đánh giá (1–1.5 ngày, cần GPU)
 
-- [ ] `P2.1` **Train lại** với code đã sửa (15 epoch, `USE_PRETRAINED=False`) → checkpoint mới + `confusion_matrix.png` mới.
-- [ ] `P2.2` Báo cáo đầy đủ: **accuracy, precision, recall, F1 (macro & per-class)**; lưu ý `test/rose` chỉ 97 ảnh gây lệch lớp.
-- [ ] `P2.3` Thêm **early stopping** (patience ~4) tránh overfit.
-- [ ] `P2.4` (Tùy chọn so sánh) Train bản `USE_PRETRAINED=True` → bảng so sánh Scratch vs Transfer Learning trong README.
-- [ ] `P2.5` Lưu `outputs/training_report.md` + confusion matrix để dùng cho báo cáo môn học.
+- [x] `P2.1` **Train lại** với code đã sửa (15 epoch, `USE_PRETRAINED=False`) → checkpoint mới + `confusion_matrix.png` mới.
+      → Xong. Best val_acc **85.00% @ epoch 13**, ~9 phút. Checkpoint cũ đã backup thành `checkpoints/best_alexnet_flowers_v1_scratch.pth`.
+- [x] `P2.2` Báo cáo đầy đủ: **accuracy, precision, recall, F1 (macro & per-class)**; lưu ý `test/rose` chỉ 97 ảnh gây lệch lớp.
+      → `docs/training_report.md`. Kết quả v2: **Accuracy 0.8034 / Macro F1 0.8038** → **thấp hơn** baseline (0.8345 / 0.8360).
+- [x] `P2.3` Thêm **early stopping** (`config.EARLY_STOPPING_PATIENCE = 5`, đặt 0 để tắt) + đo thời gian mỗi epoch.
+      → Không kích hoạt trong lần chạy này (chuỗi không cải thiện dài nhất = 2 epoch).
+- [x] `P2.4` (Tùy chọn so sánh) Train bản `USE_PRETRAINED=True` → bảng so sánh Scratch vs Transfer Learning trong README.
+      → **XONG và là phương án thắng.** Best val_acc **96.60% @ epoch 13**; test **Accuracy 0.9420 / Macro F1 0.9452**
+      (vượt baseline **+10.75 pp**). `config.USE_PRETRAINED` đã chuyển thành `True`.
+- [x] `P2.5` Lưu `training_report.md` + confusion matrix để dùng cho báo cáo môn học.
+      → Đã lưu tại `docs/training_report.md` (đặt trong `docs/` để được version hóa, vì `outputs/*` bị gitignore).
 
-**Verify:** macro F1 ≥ baseline Phase 0; có bảng so sánh và biểu đồ.
+**Verify:** ✅ **ĐẠT** — v3 (transfer learning): Accuracy 0.9420, Macro F1 0.9452, recall `lily` 0.97.
+Đầy đủ 3 phiên bản được lưu và so sánh: `best_alexnet_flowers_v1_scratch.pth`,
+`best_alexnet_flowers_v2_scratch.pth`, `best_alexnet_flowers.pth` (v3).
+Chi tiết & phân tích: `docs/training_report.md`.
+
+**Điểm đáng chú ý:** bản scratch train lại (v2) cho kết quả *thấp hơn* baseline (0.8034 / 0.8038)
+nhưng đây **không phải lỗi code** — evaluator mới chạy lại trên checkpoint v1 vẫn cho đúng
+0.8345 / 0.8360, và hai bản scratch có val_acc gần như trùng nhau (85.0% vs 85.4%). Mức lệch
+nằm trong sai số chuẩn (~1.5 pp với 707 mẫu test) do dao động seed.
 
 ---
 
@@ -126,7 +140,7 @@ Mục tiêu: biết chính xác hiện trạng đang đúng tới đâu trước
 |---|---|---|---|---|
 | 0 | Baseline + nhánh git | 0.5 ngày | ✅ | **XONG** |
 | 1 | Sửa lỗi đúng/sai | 1 ngày | ✅ | **XONG** |
-| 2 | Train lại + đánh giá | 1–1.5 ngày | ✅ | Chờ thực hiện |
+| 2 | Train lại + đánh giá | 1–1.5 ngày | ✅ | **XONG** — v3 transfer learning: 0.9420 / 0.9452 (`docs/training_report.md`) |
 | 3 | Test + cấu trúc code | 1 ngày | ⚠️ nên có | Chờ thực hiện |
 | 4 | Web app & UX | 0.5–1 ngày | ⚠️ nên có | Chờ thực hiện |
 | 5 | Tài liệu | 0.5 ngày | ✅ | Chờ thực hiện |

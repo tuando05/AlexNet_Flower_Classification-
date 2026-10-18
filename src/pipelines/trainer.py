@@ -1,6 +1,7 @@
 import json
 import os
 import sys
+import time
 from datetime import datetime
 
 # Ensure root directory is in python path
@@ -65,18 +66,31 @@ def save_training_artifacts(history, class_names):
     print(f"  --> Đã lưu biểu đồ huấn luyện: {curves_path}")
 
 
-def train_model(model, train_loader, val_loader, criterion, optimizer, scheduler, num_epochs=15, device=config.DEVICE):
+def train_model(model, train_loader, val_loader, criterion, optimizer, scheduler, num_epochs=15,
+                device=config.DEVICE, early_stopping_patience=config.EARLY_STOPPING_PATIENCE):
     """
     Trains PyTorch AlexNet model and saves best checkpoint based on validation accuracy.
+
+    Args:
+        early_stopping_patience: Số epoch liên tiếp không cải thiện val_acc thì dừng sớm.
+            Đặt None hoặc 0 để tắt early stopping.
+
+    Returns:
+        dict: history gồm train_loss, train_acc, val_loss, val_acc theo từng epoch.
     """
     os.makedirs(config.CHECKPOINT_DIR, exist_ok=True)
     history = {'train_loss': [], 'train_acc': [], 'val_loss': [], 'val_acc': []}
     best_val_acc = 0.0
+    best_epoch = 0
+    epochs_without_improvement = 0
 
     print(f"Starting training on device: {device}")
+    print(f"Epochs: {num_epochs} | Early stopping patience: {early_stopping_patience}")
     print("-" * 50)
 
     for epoch in range(num_epochs):
+        epoch_start = time.time()
+
         # Training Phase
         model.train()
         running_loss = 0.0
@@ -128,13 +142,17 @@ def train_model(model, train_loader, val_loader, criterion, optimizer, scheduler
         history['val_loss'].append(epoch_val_loss)
         history['val_acc'].append(epoch_val_acc)
 
+        elapsed = time.time() - epoch_start
         print(f"Epoch {epoch+1:02d}/{num_epochs:02d} | "
               f"Train Loss: {epoch_train_loss:.4f} | Train Acc: {epoch_train_acc*100:.2f}% | "
-              f"Val Loss: {epoch_val_loss:.4f} | Val Acc: {epoch_val_acc*100:.2f}%")
+              f"Val Loss: {epoch_val_loss:.4f} | Val Acc: {epoch_val_acc*100:.2f}% | "
+              f"Time: {elapsed:.1f}s")
 
         # Chỉ lưu khi thực sự tốt hơn epoch trước (tránh ghi đè liên tục)
         if epoch_val_acc > best_val_acc:
             best_val_acc = epoch_val_acc
+            best_epoch = epoch + 1
+            epochs_without_improvement = 0
             torch.save({
                 'epoch': epoch + 1,
                 'model_state_dict': model.state_dict(),
@@ -150,9 +168,17 @@ def train_model(model, train_loader, val_loader, criterion, optimizer, scheduler
                 'trained_at': datetime.now().isoformat(timespec='seconds'),
             }, config.MODEL_PATH)
             print(f"  --> Saved best model checkpoint (Val Acc: {best_val_acc*100:.2f}%) to {config.MODEL_PATH}")
+        else:
+            epochs_without_improvement += 1
+            print(f"  --> Không cải thiện ({epochs_without_improvement}/{early_stopping_patience or '-'} epoch liên tiếp)")
+
+        # Early stopping
+        if early_stopping_patience and epochs_without_improvement >= early_stopping_patience:
+            print(f"  --> EARLY STOPPING tại epoch {epoch+1} (best epoch: {best_epoch})")
+            break
 
     print("-" * 50)
-    print(f"Training completed! Best Validation Accuracy: {best_val_acc*100:.2f}%")
+    print(f"Training completed! Best Validation Accuracy: {best_val_acc*100:.2f}% (epoch {best_epoch})")
     return history
 
 

@@ -30,9 +30,13 @@ NUM_EPOCHS = 15
 LEARNING_RATE = 0.0001
 WEIGHT_DECAY = 1e-4
 
+# Dừng sớm nếu val_acc không cải thiện sau bao nhiêu epoch liên tiếp (0/None = tắt)
+# Đặt 5 để scheduler ReduceLROnPlateau (patience=2) có cơ hội giảm LR rồi thử lại.
+EARLY_STOPPING_PATIENCE = 5
+
 # Model Selection
 # Set USE_PRETRAINED = True for Transfer Learning, False for AlexNet from Scratch
-USE_PRETRAINED = False
+USE_PRETRAINED = True
 
 # Device configuration
 DEVICE = torch.device('cuda' if torch.cuda.is_available() else 'cpu')

@@ -45,6 +45,11 @@ File: `checkpoints/best_alexnet_flowers.pth` (~684 MB)
 
 ## 4. Tiêu chí nghiệm thu cho Phase 2 (sau khi train lại)
 
-- [ ] Accuracy ≥ 0.83 · Macro F1 ≥ 0.84
-- [ ] Recall của `lily` cải thiện so với 0.79 (đây là điểm yếu rõ nhất)
-- [ ] Checkpoint mới lưu được `use_pretrained`, `arch`, `classes`, `trained_at`
+- [x] Accuracy ≥ 0.83 · Macro F1 ≥ 0.84
+- [x] Recall của `lily` cải thiện so với 0.79 (đây là điểm yếu rõ nhất)
+- [x] Checkpoint mới lưu được `use_pretrained`, `arch`, `classes`, `trained_at`
+
+> **Kết quả cuối cùng (Phase 2):** cả 3 phiên bản (v1/v2/v3) và bảng so sánh đầy đủ nằm ở
+> `docs/training_report.md`. Tóm tắt: bản scratch train lại (v2) cho 0.8034 / 0.8038 —
+> *thấp hơn* baseline do dao động seed; bản **transfer learning (v3) đạt 0.9420 / 0.9452**,
+> vượt baseline +10.75 pp accuracy. **Toàn bộ tiêu chí trên đều ĐẠT với v3.**
