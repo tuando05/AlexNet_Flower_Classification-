@@ -11,40 +11,53 @@ import torch.nn.functional as F
 from PIL import Image
 
 import config
-from src.models.builder import build_model
+from src.models.builder import build_model, load_trained_model
 from src.data.transforms import get_transforms
+from src.utils.console import setup_console
+
+setup_console()
+
 
 class FlowerPredictor:
     """
     Inference helper class for flower image classification.
     """
+
     def __init__(self, model_path=config.MODEL_PATH, device=config.DEVICE):
         self.device = device
-        self.class_names = config.TARGET_CLASSES
+        self.model_path = model_path
         self.class_names_vi = config.CLASS_NAMES_VI
+        self.metadata = {}
+        self.is_trained = os.path.exists(model_path)
+
         _, self.transform = get_transforms()
 
-        self.model = build_model(
-            use_pretrained=config.USE_PRETRAINED,
-            num_classes=len(self.class_names),
-            device=self.device
-        )
-
-        if os.path.exists(model_path):
-            checkpoint = torch.load(model_path, map_location=self.device)
-            if isinstance(checkpoint, dict) and 'model_state_dict' in checkpoint:
-                self.model.load_state_dict(checkpoint['model_state_dict'])
-            else:
-                self.model.load_state_dict(checkpoint)
+        if self.is_trained:
+            # Kiến trúc + thứ tự lớp được đọc từ checkpoint để luôn khớp với
+            # không gian nhãn mà model đã được huấn luyện.
+            self.model, self.metadata, self.class_names = load_trained_model(
+                model_path=model_path,
+                device=device,
+                default_classes=config.TARGET_CLASSES,
+            )
             print(f"Loaded trained model checkpoint from: {model_path}")
+            print(f"Classes (from checkpoint): {self.class_names}")
         else:
-            print(f"Warning: Checkpoint '{model_path}' not found! Model will use un-trained random weights.")
-
-        self.model.eval()
+            self.class_names = list(config.TARGET_CLASSES)
+            self.model = build_model(
+                use_pretrained=config.USE_PRETRAINED,
+                num_classes=len(self.class_names),
+                device=device,
+            )
+            self.model.eval()
+            print(
+                f"Warning: Checkpoint '{model_path}' not found! "
+                "Model will use un-trained random weights."
+            )
 
     def predict_image(self, image_input):
         """
-        Accepts PIL Image object, file path, or bytes, and returns top prediction & confidence scores.
+        Accepts PIL Image object or file path, and returns top prediction & confidence scores.
         """
         if isinstance(image_input, str):
             image = Image.open(image_input).convert('RGB')
@@ -79,13 +92,15 @@ class FlowerPredictor:
             'prediction_vi': predicted_class_vi,
             'confidence': confidence,
             'confidence_percentage': round(confidence * 100, 2),
+            'model_trained': self.is_trained,
             'probabilities': all_probabilities
         }
 
 
 if __name__ == '__main__':
-    predictor = FlowerPredictor()
     import numpy as np
+
+    predictor = FlowerPredictor()
     dummy_img = Image.fromarray(np.random.randint(0, 256, (224, 224, 3), dtype=np.uint8))
     result = predictor.predict_image(dummy_img)
     print("Test Prediction Output:", result)

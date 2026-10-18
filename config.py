@@ -19,6 +19,9 @@ CLASS_NAMES_VI = {
     'rose': 'Hoa Hồng (Rose)'
 }
 
+# Reproducibility
+SEED = 42
+
 # Hyperparameters
 IMAGE_SIZE = 224
 BATCH_SIZE = 32
