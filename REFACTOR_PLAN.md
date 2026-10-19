@@ -177,6 +177,13 @@ Báo cáo chi tiết: **`docs/CLEANUP_REPORT.md`**
 - [x] `P6.5` Chuẩn hoá 14 log message tiếng Việt không dấu trong `download_data.py`/`downloader.py`.
 - [x] `P6.6` Sửa 3 chỗ tài liệu mô tả sai code (scheduler `mode='max'` → `mode='min'`,
   `get_logger()`, kích thước checkpoint).
+- [x] `P6.7` **Quét lần 2 — trùng lặp tinh vi** (khối code lặp ở nhiều file, chỗ nào cũng "có
+  người dùng" nên ruff không báo): gộp fixture `fake_build_model` (định nghĩa 2 lần ở
+  `test_checkpoint.py` + `test_predictor.py`) vào `tests/conftest.py`; gộp helper tạo ảnh giả
+  (2 bản với 2 chữ ký khác nhau) vào `tests/_helpers.py::make_images`; rút `.gitattributes`
+  từ 20 → 4 dòng; xoá 1 dòng `.gitignore` trùng; chuẩn hoá notebook sang LF. Kiểm tra và kết luận
+  **sạch**: CSS (0 thuộc tính trùng), `requirements.txt` (cả 12 package đều dùng), tài liệu
+  (trùng tối đa ~7%), `pytest.ini` (cần giữ `norecursedirs`).
 
 **Verify:** ✅ `pytest -q` → **69 pass / 1 skipped**; ruff lần 2 không còn F/B007 (các `ARG` còn lại
 là false positive có ghi chú); quét HTML/CSS lần 2 → 0 class/id mồ côi, 0 biến CSS thừa;
@@ -195,7 +202,7 @@ không đổi (0.9420 / 0.9452).
 | 3 | Test + cấu trúc code | 1 ngày | ⚠️ nên có | **XONG** — 53 test pass, logging, pin version, notebook sạch |
 | 4 | Web app & UX | 0.5–1 ngày | ⚠️ nên có | **XONG** — ảnh mẫu thật, lifespan, validate upload 10MB, EXIF, health metadata (+14 test API → 68 pass) |
 | 5 | Tài liệu | 0.5 ngày | ✅ | **XONG** — viết lại `README.md`, thêm `docs/BAO_CAO.md`, rà `.gitignore` |
-| 6 | Dọn code/file thừa | 0.5 ngày | ⚠️ nên có | **XONG** — xoá ~107 dòng code chết, checkpoint 652MB → ~245MB (`docs/CLEANUP_REPORT.md`) |
+| 6 | Dọn code/file thừa | 0.5 ngày | ⚠️ nên có | **XONG** — xoá ~107 dòng code chết + ~45 dòng trùng lặp, checkpoint 652MB → ~245MB (`docs/CLEANUP_REPORT.md`) |
 
 **Rủi ro cần biết trước:**
 - Phase 2 cần **train lại** (GPU khả dụng) → tốn thời gian; kết quả có thể khác baseline (tốt hơn hoặc xấu hơn tùy seed).

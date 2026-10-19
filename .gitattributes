@@ -1,20 +1,4 @@
-# Auto detect text files and perform LF normalization
+# Tự nhận diện file text/nhị phân và chuẩn hoá LF cho mọi file text.
+# Không cần liệt kê từng phần mở rộng: `text=auto` đã bao quát, git tự nhận
+# diện file nhị phân (*.png, *.jpg, *.pth...) nên không cần khai báo `binary`.
 * text=auto eol=lf
-
-# Python & Web files
-*.py text eol=lf
-*.html text eol=lf
-*.css text eol=lf
-*.js text eol=lf
-*.json text eol=lf
-*.md text eol=lf
-*.txt text eol=lf
-*.gitignore text eol=lf
-*.gitattributes text eol=lf
-
-# Binary files
-*.png binary
-*.jpg binary
-*.jpeg binary
-*.pth binary
-*.pt binary

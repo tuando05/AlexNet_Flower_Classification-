@@ -2,11 +2,12 @@
 
 Ngày: 2026-10-19 · Nhánh: `refactor/fix-project` · Phạm vi: **toàn bộ repo** (trừ `.venv`, dữ liệu, checkpoint)
 
-> **Kết luận ngắn:** đã xoá **~107 dòng code chết** và 5 class/id HTML không dùng, gộp 5 file
-> `__init__.py` từ "re-export" xuống docstring, và **phát hiện 1 vấn đề thật** (không chỉ là dư thừa):
-> mỗi checkpoint lưu thừa `optimizer_state_dict` → file **652MB thay vì ~245MB**, đồng thời app web
-> giữ hàng trăm MB tensor đó trong RAM suốt vòng đời tiến trình. Không đổi kết quả model
-> (vẫn 0.9420 / 0.9452), bộ test **69 passed / 1 skipped**.
+> **Kết luận ngắn:** đã xoá **~107 dòng code chết** (lần quét 1) và **~45 dòng code trùng lặp**
+> (lần quét 2), 5 class/id HTML không dùng, gộp 5 file `__init__.py` từ "re-export" xuống docstring,
+> và **phát hiện 1 vấn đề thật** (không chỉ là dư thừa): mỗi checkpoint lưu thừa
+> `optimizer_state_dict` → file **652MB thay vì ~245MB**, đồng thời app web giữ hàng trăm MB tensor đó
+> trong RAM suốt vòng đời tiến trình. Không đổi kết quả model (vẫn 0.9420 / 0.9452), bộ test
+> **69 passed / 1 skipped**.
 
 ---
 
@@ -25,7 +26,7 @@ Các lệnh cụ thể ở **mục 9 (phụ lục)** để có thể chạy lạ
 
 ---
 
-## 2. Tóm tắt kết quả
+## 2. Tóm tắt kết quả (lần quét 1)
 
 | Hạng mục | Trước | Sau |
 |---|---|---|
@@ -246,7 +247,54 @@ Các file dưới đây **lớn** và/hoặc là bằng chứng, nên tôi khôn
 
 ---
 
-## 11. Phụ lục — lệnh quét để tái sử dụng
+## 11. Quét lần 2 — các dạng trùng lặp "tinh vi"
+
+Sau lần 1 (đã xoá code/hàm/hằng **không có người gọi**), lần 2 nhắm vào dạng khó thấy hơn:
+**cùng một khối code/logic bị viết lặp ở nhiều chỗ** (mỗi bản đều "có người dùng" nên công cụ
+thông thường không báo).
+
+### 11.1 Phương pháp
+| Phép kiểm | Cách làm |
+|---|---|
+| CSS khai báo trùng thuộc tính trong cùng một rule | tách selector/body bằng regex, đếm property trùng |
+| Khối code 5 dòng giống nhau ở ≥ 2 file `.py` | chuẩn hoá từng dòng (bỏ comment/dòng trắng), trượt cửa sổ 5 dòng |
+| Fixture / helper định nghĩa lặp trong `tests/` | `grep` tên fixture/helper trên toàn thư mục test |
+| Tài liệu lặp | đếm tỉ lệ dòng chung giữa mọi cặp file `.md` |
+| Phụ thuộc không dùng | đối chiếu từng package trong `requirements.txt` với `grep` |
+
+### 11.2 Đã sửa
+
+| Hạng mục | Trước | Sau |
+|---|---|---|
+| Fixture `fake_build_model` | định nghĩa **2 lần** (`test_checkpoint.py::patched_builder`, `test_predictor.py::tiny_model_builder`) | **1 lần** trong `tests/conftest.py` (`fake_model_builder`) |
+| Helper tạo ảnh giả | định nghĩa **2 lần** với 2 chữ ký khác nhau (`_make_images(dir, names)` và `_make_images(dir, count)`) | **1 lần** trong `tests/_helpers.py` (`make_images(dir, *names)`) |
+| `.gitattributes` | 20 dòng: liệt kê 9 phần mở rộng text + 5 phần mở rộng binary | **4 dòng** — `* text=auto eol=lf` đã bao quát mọi file, git tự nhận diện nhị phân |
+| `.gitignore` | 2 dòng cho `.ipynb_checkpoints/` (dòng `notebooks/.ipynb_checkpoints/` là dư) | 1 dòng |
+| `notebooks/*.ipynb` | working tree bị CRLF (git phải cảnh báo + tự đổi sang LF mỗi lần `git add`) | đã chuẩn hoá **LF** |
+
+→ Xoá thêm **~45 dòng** trùng lặp. Sau khi gộp, sửa `fake_build_model` chỉ cần sửa **1 chỗ** cho
+cả 2 file test (trước đây sửa 1 bên rất dễ quên bên kia).
+
+### 11.3 Đã kiểm tra và **kết luận là sạch** (không cần sửa)
+
+| Hạng mục | Kết quả kiểm tra |
+|---|---|
+| CSS | **0** rule có thuộc tính khai báo trùng; 0 selector mồ côi (đã quét cả `@media`, `@keyframes`) |
+| `requirements.txt` | **cả 12 package đều được import thật**: torch, torchvision, pillow, numpy, matplotlib, seaborn, scikit-learn, fastapi, uvicorn, python-multipart (bắt buộc cho `UploadFile`), Jinja2 (cho `Jinja2Templates`), kagglehub |
+| Tài liệu | mức trùng cao nhất giữa 2 file `.md` chỉ **~7%** (README ↔ BAO_CAO) → **không** có chuyện "3 file chép lại một bảng kết quả" |
+| `pytest.ini` | `norecursedirs` thoạt nhìn dư (vì đã có `testpaths = tests`) nhưng **cần giữ**: khi ai đó chạy `pytest .` thì `testpaths` bị bỏ qua, lúc đó `norecursedirs` mới chặn `.venv`/`flower_data_3classes` |
+| Notebook (cell 4 và cell 7) | cùng gọi bước chuẩn bị dữ liệu là **cố ý sư phạm** (giải thích từng bước), cell 7 dùng lại cache nên không tốn thời gian |
+| `scripts/make_sample_images.py`, `download_data.py` | hai entry point khác nhau, không trùng logic (logic tải đã gom về `src/data/downloader.py` từ Phase 1) |
+
+### 11.4 Còn lặp nhưng **cố ý giữ**
+| Vị trí | Số dòng | Vì sao không gộp |
+|---|---|---|
+| Khối bootstrap `BASE_DIR` + `sys.path.insert` | 6 entry point × ~4 dòng | Bản chất "con gà - quả trứng": phải có `sys.path` **trước khi** import được `config`/`src`, nên không thể đưa vào một helper dùng chung. Chỉ gộp được nếu bỏ chế độ chạy trực tiếp file (hiện `scripts/make_sample_images.py` nằm trong thư mục con bắt buộc cần nó) |
+| 3 dòng import `setup_console` / `setup_logging` / `configure_matplotlib_backend` ở trainer & evaluator | ~6 dòng | Cùng lý do; đã gom **thân** hàm vào `src/utils/`, chỉ còn phần import là trùng |
+
+---
+
+## 12. Phụ lục — lệnh quét để tái sử dụng
 
 ```bash
 # 1. Code chết trong Python (import/hàm/biến/tham số thừa)
@@ -271,3 +319,23 @@ git ls-files | Select-String -Pattern '\.pth$|flower_data_3classes'   # phải r
 python -m pytest -q
 python -m src.pipelines.predictor
 ```
+
+### Lệnh cho lần quét 2 (trùng lặp)
+
+```bash
+# a) Fixture/helper định nghĩa lặp trong thư mục test (ví dụ)
+#    (thay <ten> bằng tên fixture/helper cần kiểm tra)
+git grep -n "def <ten>" -- tests/
+
+# b) Phụ thuộc không dùng: đối chiếu từng dòng trong requirements.txt với code
+git grep -n "import <ten_package>"
+
+# c) CSS khai báo trùng thuộc tính trong cùng một rule / biến --var không dùng:
+#    tách selector-body bằng regex rồi đếm property trùng (xem mục 11.1)
+
+# d) Tài liệu lặp: đếm tỉ lệ dòng chung giữa mọi cặp file *.md (xem mục 11.1)
+
+# e) Chuẩn hoá line-ending file notebook (tránh git cảnh báo CRLF mỗi lần add)
+python -c "from pathlib import Path; p=Path('notebooks/alexnet_flower_classification.ipynb'); p.write_bytes(p.read_bytes().replace(b'\r\n', b'\n'))"
+```
+

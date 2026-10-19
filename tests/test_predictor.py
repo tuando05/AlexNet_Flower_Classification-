@@ -6,23 +6,8 @@ import torch
 from PIL import Image
 
 import config
-from src.models import builder
-from src.pipelines import predictor as predictor_module
 from src.pipelines.predictor import FlowerPredictor
 from tests._helpers import TinyModel
-
-
-@pytest.fixture
-def tiny_model_builder(monkeypatch):
-    """Dùng TinyModel thay AlexNet để test không cần checkpoint thật."""
-
-    def fake_build_model(use_pretrained=False, num_classes=3, device='cpu'):
-        return TinyModel(num_classes).to(device)
-
-    # Patch cả 2 nơi: builder (dùng bởi load_trained_model) và predictor
-    # (dùng cho nhánh chưa có checkpoint).
-    monkeypatch.setattr(builder, 'build_model', fake_build_model)
-    monkeypatch.setattr(predictor_module, 'build_model', fake_build_model)
 
 
 @pytest.fixture
@@ -46,7 +31,7 @@ def _make_checkpoint(tmp_path, classes, name='ckpt.pth'):
     return str(path)
 
 
-def test_predict_returns_expected_structure(tmp_path, tiny_model_builder, random_image):
+def test_predict_returns_expected_structure(tmp_path, fake_model_builder, random_image):
     path = _make_checkpoint(tmp_path, ['daisy', 'lily', 'rose'])
 
     result = FlowerPredictor(model_path=path, device='cpu').predict_image(random_image)
@@ -60,7 +45,7 @@ def test_predict_returns_expected_structure(tmp_path, tiny_model_builder, random
     assert 0.0 <= result['confidence'] <= 1.0
 
 
-def test_probabilities_cover_all_classes_and_sum_to_100(tmp_path, tiny_model_builder, random_image):
+def test_probabilities_cover_all_classes_and_sum_to_100(tmp_path, fake_model_builder, random_image):
     path = _make_checkpoint(tmp_path, ['daisy', 'lily', 'rose'])
 
     result = FlowerPredictor(model_path=path, device='cpu').predict_image(random_image)
@@ -71,7 +56,7 @@ def test_probabilities_cover_all_classes_and_sum_to_100(tmp_path, tiny_model_bui
     assert sum(p['probability'] for p in probabilities.values()) == pytest.approx(1.0, abs=0.001)
 
 
-def test_prediction_matches_highest_probability(tmp_path, tiny_model_builder, random_image):
+def test_prediction_matches_highest_probability(tmp_path, fake_model_builder, random_image):
     path = _make_checkpoint(tmp_path, ['daisy', 'lily', 'rose'])
 
     result = FlowerPredictor(model_path=path, device='cpu').predict_image(random_image)
@@ -81,7 +66,7 @@ def test_prediction_matches_highest_probability(tmp_path, tiny_model_builder, ra
     assert result['confidence_percentage'] == pytest.approx(best[1]['percentage'], abs=0.01)
 
 
-def test_uses_class_order_from_checkpoint(tmp_path, tiny_model_builder, random_image):
+def test_uses_class_order_from_checkpoint(tmp_path, fake_model_builder, random_image):
     """Thứ tự lớp phải theo checkpoint, không phải theo config."""
     path = _make_checkpoint(tmp_path, ['rose', 'daisy', 'lily'])
 
@@ -91,7 +76,7 @@ def test_uses_class_order_from_checkpoint(tmp_path, tiny_model_builder, random_i
     assert list(predictor.predict_image(random_image)['probabilities']) == ['rose', 'daisy', 'lily']
 
 
-def test_vietnamese_label_is_attached(tmp_path, tiny_model_builder, random_image):
+def test_vietnamese_label_is_attached(tmp_path, fake_model_builder, random_image):
     path = _make_checkpoint(tmp_path, ['daisy', 'lily', 'rose'])
 
     result = FlowerPredictor(model_path=path, device='cpu').predict_image(random_image)
@@ -99,7 +84,7 @@ def test_vietnamese_label_is_attached(tmp_path, tiny_model_builder, random_image
     assert result['prediction_vi'] == config.CLASS_NAMES_VI[result['prediction']]
 
 
-def test_accepts_file_path(tmp_path, tiny_model_builder, random_image):
+def test_accepts_file_path(tmp_path, fake_model_builder, random_image):
     path = _make_checkpoint(tmp_path, ['daisy', 'lily', 'rose'])
     image_path = tmp_path / 'flower.jpg'
     random_image.save(image_path)
@@ -109,7 +94,7 @@ def test_accepts_file_path(tmp_path, tiny_model_builder, random_image):
     assert result['prediction'] in ['daisy', 'lily', 'rose']
 
 
-def test_missing_checkpoint_flags_untrained_and_still_predicts(tmp_path, tiny_model_builder, random_image):
+def test_missing_checkpoint_flags_untrained_and_still_predicts(tmp_path, fake_model_builder, random_image):
     predictor = FlowerPredictor(model_path=str(tmp_path / 'khong_ton_tai.pth'), device='cpu')
 
     assert predictor.is_trained is False
@@ -118,7 +103,7 @@ def test_missing_checkpoint_flags_untrained_and_still_predicts(tmp_path, tiny_mo
     assert len(result['probabilities']) == len(config.TARGET_CLASSES)
 
 
-def test_invalid_input_type_raises(tmp_path, tiny_model_builder):
+def test_invalid_input_type_raises(tmp_path, fake_model_builder):
     path = _make_checkpoint(tmp_path, ['daisy', 'lily', 'rose'])
     predictor = FlowerPredictor(model_path=path, device='cpu')
 
@@ -126,7 +111,7 @@ def test_invalid_input_type_raises(tmp_path, tiny_model_builder):
         predictor.predict_image(12345)
 
 
-def test_grayscale_and_rgba_inputs_are_converted(tmp_path, tiny_model_builder):
+def test_grayscale_and_rgba_inputs_are_converted(tmp_path, fake_model_builder):
     path = _make_checkpoint(tmp_path, ['daisy', 'lily', 'rose'])
     predictor = FlowerPredictor(model_path=path, device='cpu')
 

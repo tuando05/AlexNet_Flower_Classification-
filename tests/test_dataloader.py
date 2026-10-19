@@ -7,19 +7,13 @@ import pytest
 
 import config
 from src.data.dataloader import _ensure_split_ready
-
-
-def _make_images(directory, count=1):
-    os.makedirs(directory, exist_ok=True)
-    for i in range(count):
-        with open(os.path.join(directory, f'img_{i}.jpg'), 'wb') as f:
-            f.write(b'x')
+from tests._helpers import make_images
 
 
 def _build_full_dataset(root, splits=('train', 'val', 'test')):
     for split in splits:
         for cls in config.TARGET_CLASSES:
-            _make_images(os.path.join(root, split, cls))
+            make_images(os.path.join(root, split, cls), 'img_0.jpg')
 
 
 def test_passes_when_all_splits_have_all_classes(tmp_path):

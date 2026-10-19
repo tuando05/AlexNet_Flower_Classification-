@@ -14,19 +14,13 @@ from src.data.downloader import (
     has_existing_data,
     list_images,
 )
-
-
-def _make_images(directory, names):
-    os.makedirs(directory, exist_ok=True)
-    for name in names:
-        with open(os.path.join(directory, name), 'wb') as f:
-            f.write(b'x')
+from tests._helpers import make_images
 
 
 def test_list_images_filters_extensions_and_dirs(tmp_path):
-    _make_images(tmp_path, ['a.jpg', 'b.JPEG', 'c.png', 'd.bmp'])
-    _make_images(tmp_path, ['e.gif', 'f.txt'])
-    _make_images(os.path.join(tmp_path, 'thu_muc_ten_nhu_anh.jpg'), [])
+    make_images(tmp_path, 'a.jpg', 'b.JPEG', 'c.png', 'd.bmp')
+    make_images(tmp_path, 'e.gif', 'f.txt')
+    make_images(os.path.join(tmp_path, 'thu_muc_ten_nhu_anh.jpg'))
 
     found = sorted(list_images(str(tmp_path)))
 
@@ -44,14 +38,14 @@ def test_has_existing_data_false_when_empty(tmp_path):
 def test_has_existing_data_false_when_only_non_image_files(tmp_path):
     for split in SPLIT_MAP.values():
         for cls in config.TARGET_CLASSES:
-            _make_images(os.path.join(str(tmp_path), split, cls), ['note.txt'])
+            make_images(os.path.join(str(tmp_path), split, cls), 'note.txt')
 
     assert has_existing_data(str(tmp_path)) is False
 
 
 @pytest.mark.parametrize("split,cls", [('train', 'daisy'), ('val', 'lily'), ('test', 'rose')])
 def test_has_existing_data_true_when_any_class_has_image(tmp_path, split, cls):
-    _make_images(os.path.join(str(tmp_path), split, cls), ['a.jpg'])
+    make_images(os.path.join(str(tmp_path), split, cls), 'a.jpg')
 
     assert has_existing_data(str(tmp_path)) is True
 
@@ -77,13 +71,13 @@ def test_download_and_filter_returns_true_without_network_when_data_exists(tmp_p
 
     Điều này đảm bảo chạy lại script không ghi đè dữ liệu người dùng.
     """
-    _make_images(os.path.join(str(tmp_path), 'train', 'daisy'), ['a.jpg'])
+    make_images(os.path.join(str(tmp_path), 'train', 'daisy'), 'a.jpg')
 
     assert download_and_filter_dataset(target_base_dir=str(tmp_path)) is True
 
 
 def test_download_and_filter_force_removes_old_data(tmp_path, monkeypatch):
-    _make_images(os.path.join(str(tmp_path), 'train', 'daisy'), ['a.jpg'])
+    make_images(os.path.join(str(tmp_path), 'train', 'daisy'), 'a.jpg')
     monkeypatch.setattr(downloader, 'has_existing_data', lambda *a, **k: False)
 
     # Không có kagglehub trong môi trường test thì hàm phải trả False thay vì crash

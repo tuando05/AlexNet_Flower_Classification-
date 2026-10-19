@@ -4,23 +4,8 @@ import torch
 import pytest
 
 import config
-from src.models import builder
 from src.models.builder import load_checkpoint_data, load_trained_model
 from tests._helpers import TinyModel
-
-
-@pytest.fixture
-def patched_builder(monkeypatch):
-    """Thay build_model bằng bản nhẹ, ghi lại tham số được truyền vào."""
-    calls = {}
-
-    def fake_build_model(use_pretrained=False, num_classes=3, device='cpu'):
-        calls['use_pretrained'] = use_pretrained
-        calls['num_classes'] = num_classes
-        return TinyModel(num_classes)
-
-    monkeypatch.setattr(builder, 'build_model', fake_build_model)
-    return calls
 
 
 def _save(tmp_path, name, payload):
@@ -95,7 +80,7 @@ def test_load_checkpoint_data_passes_weights_only_false(tmp_path, monkeypatch):
     assert captured.get('weights_only') is False
 
 
-def test_load_trained_model_takes_classes_from_checkpoint(tmp_path, patched_builder):
+def test_load_trained_model_takes_classes_from_checkpoint(tmp_path, fake_model_builder):
     path = _save(tmp_path, 'ckpt.pth', {
         'model_state_dict': TinyModel(3).state_dict(),
         'classes': ['rose', 'daisy', 'lily'],
@@ -105,12 +90,12 @@ def test_load_trained_model_takes_classes_from_checkpoint(tmp_path, patched_buil
     model, metadata, class_names = load_trained_model(path, device='cpu', default_classes=['daisy', 'lily', 'rose'])
 
     assert class_names == ['rose', 'daisy', 'lily'], "phải ưu tiên thứ tự lớp trong checkpoint"
-    assert patched_builder['num_classes'] == 3
+    assert fake_model_builder['num_classes'] == 3
     assert isinstance(model, TinyModel)
     assert model.training is False, "model phải ở chế độ eval"
 
 
-def test_load_trained_model_falls_back_to_default_classes(tmp_path, patched_builder):
+def test_load_trained_model_falls_back_to_default_classes(tmp_path, fake_model_builder):
     path = _save(tmp_path, 'legacy.pth', TinyModel(3).state_dict())
 
     _, _, class_names = load_trained_model(path, device='cpu', default_classes=['a', 'b', 'c'])
@@ -118,7 +103,7 @@ def test_load_trained_model_falls_back_to_default_classes(tmp_path, patched_buil
     assert class_names == ['a', 'b', 'c']
 
 
-def test_load_trained_model_falls_back_to_config_classes(tmp_path, patched_builder):
+def test_load_trained_model_falls_back_to_config_classes(tmp_path, fake_model_builder):
     path = _save(tmp_path, 'legacy.pth', TinyModel(len(config.TARGET_CLASSES)).state_dict())
 
     _, _, class_names = load_trained_model(path, device='cpu')
@@ -128,7 +113,7 @@ def test_load_trained_model_falls_back_to_config_classes(tmp_path, patched_build
 
 @pytest.mark.parametrize("checkpoint_value,expected", [(True, True), (False, False)])
 def test_load_trained_model_honours_use_pretrained_from_checkpoint(
-    tmp_path, patched_builder, monkeypatch, checkpoint_value, expected
+    tmp_path, fake_model_builder, monkeypatch, checkpoint_value, expected
 ):
     """
     Kiến trúc phải lấy từ checkpoint, không lấy từ config.
@@ -145,19 +130,19 @@ def test_load_trained_model_honours_use_pretrained_from_checkpoint(
 
     load_trained_model(path, device='cpu')
 
-    assert patched_builder['use_pretrained'] is expected
+    assert fake_model_builder['use_pretrained'] is expected
 
 
-def test_load_trained_model_missing_metadata_uses_config_default(tmp_path, patched_builder, monkeypatch):
+def test_load_trained_model_missing_metadata_uses_config_default(tmp_path, fake_model_builder, monkeypatch):
     monkeypatch.setattr(config, 'USE_PRETRAINED', False)
     path = _save(tmp_path, 'legacy.pth', TinyModel(3).state_dict())
 
     load_trained_model(path, device='cpu', default_classes=['daisy', 'lily', 'rose'])
 
-    assert patched_builder['use_pretrained'] is False
+    assert fake_model_builder['use_pretrained'] is False
 
 
-def test_load_trained_model_raises_on_unmatched_state_dict(tmp_path, patched_builder):
+def test_load_trained_model_raises_on_unmatched_state_dict(tmp_path, fake_model_builder):
     path = _save(tmp_path, 'bad.pth', {
         'model_state_dict': TinyModel(2).state_dict(),
         'classes': ['daisy', 'lily', 'rose'],
@@ -167,6 +152,6 @@ def test_load_trained_model_raises_on_unmatched_state_dict(tmp_path, patched_bui
         load_trained_model(path, device='cpu')
 
 
-def test_load_trained_model_raises_when_file_missing(patched_builder):
+def test_load_trained_model_raises_when_file_missing(fake_model_builder):
     with pytest.raises(FileNotFoundError):
         load_trained_model('khong_ton_tai.pth', device='cpu')
