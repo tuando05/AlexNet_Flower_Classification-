@@ -1,3 +1,4 @@
+import logging
 import os
 import sys
 
@@ -11,40 +12,54 @@ import torch.nn.functional as F
 from PIL import Image
 
 import config
-from src.models.builder import build_model
+from src.models.builder import build_model, load_trained_model
 from src.data.transforms import get_transforms
+
+logger = logging.getLogger('src.pipelines.predictor')
+
 
 class FlowerPredictor:
     """
     Inference helper class for flower image classification.
+
+    Kiến trúc và thứ tự lớp luôn được đọc từ chính checkpoint, nên có thể
+    load đồng thời các checkpoint train bằng cấu hình khác nhau
+    (scratch / pre-trained) mà không cần sửa `config`.
     """
+
     def __init__(self, model_path=config.MODEL_PATH, device=config.DEVICE):
         self.device = device
-        self.class_names = config.TARGET_CLASSES
+        self.model_path = model_path
         self.class_names_vi = config.CLASS_NAMES_VI
+        self.metadata = {}
+        self.is_trained = os.path.exists(model_path)
+
         _, self.transform = get_transforms()
 
-        self.model = build_model(
-            use_pretrained=config.USE_PRETRAINED,
-            num_classes=len(self.class_names),
-            device=self.device
-        )
-
-        if os.path.exists(model_path):
-            checkpoint = torch.load(model_path, map_location=self.device)
-            if isinstance(checkpoint, dict) and 'model_state_dict' in checkpoint:
-                self.model.load_state_dict(checkpoint['model_state_dict'])
-            else:
-                self.model.load_state_dict(checkpoint)
-            print(f"Loaded trained model checkpoint from: {model_path}")
+        if self.is_trained:
+            self.model, self.metadata, self.class_names = load_trained_model(
+                model_path=model_path,
+                device=device,
+                default_classes=config.TARGET_CLASSES,
+            )
+            logger.info("Đã load checkpoint: %s", model_path)
+            logger.info("Các lớp (từ checkpoint): %s", self.class_names)
         else:
-            print(f"Warning: Checkpoint '{model_path}' not found! Model will use un-trained random weights.")
-
-        self.model.eval()
+            self.class_names = list(config.TARGET_CLASSES)
+            self.model = build_model(
+                use_pretrained=config.USE_PRETRAINED,
+                num_classes=len(self.class_names),
+                device=device,
+            )
+            self.model.eval()
+            logger.warning(
+                "Không tìm thấy checkpoint '%s'! Mô hình sẽ dùng trọng số ngẫu nhiên chưa huấn luyện.",
+                model_path,
+            )
 
     def predict_image(self, image_input):
         """
-        Accepts PIL Image object, file path, or bytes, and returns top prediction & confidence scores.
+        Accepts PIL Image object or file path, and returns top prediction & confidence scores.
         """
         if isinstance(image_input, str):
             image = Image.open(image_input).convert('RGB')
@@ -79,13 +94,44 @@ class FlowerPredictor:
             'prediction_vi': predicted_class_vi,
             'confidence': confidence,
             'confidence_percentage': round(confidence * 100, 2),
+            'model_trained': self.is_trained,
             'probabilities': all_probabilities
         }
 
 
 if __name__ == '__main__':
-    predictor = FlowerPredictor()
+    import glob
+
     import numpy as np
-    dummy_img = Image.fromarray(np.random.randint(0, 256, (224, 224, 3), dtype=np.uint8))
-    result = predictor.predict_image(dummy_img)
-    print("Test Prediction Output:", result)
+
+    from src.utils.console import setup_console
+    from src.utils.logger import setup_logging
+
+    setup_console()
+    setup_logging()
+
+    predictor = FlowerPredictor()
+
+    # Ưu tiên chạy thử trên ảnh hoa thật trong samples/ (tạo bằng
+    # `python scripts/make_sample_images.py`). Nếu chưa có thì dùng ảnh ngẫu
+    # nhiên — kết quả khi đó chỉ để kiểm tra luồng code, không có ý nghĩa.
+    sample_paths = sorted(glob.glob(os.path.join(config.SAMPLE_DIR, '*.jpg')))
+
+    if sample_paths:
+        for sample_path in sample_paths:
+            result = predictor.predict_image(sample_path)
+            logger.info(
+                "Ảnh mẫu '%s' -> %s (%.2f%%)",
+                os.path.basename(sample_path),
+                result['prediction_vi'],
+                result['confidence_percentage'],
+            )
+    else:
+        logger.warning(
+            "Không tìm thấy ảnh mẫu trong '%s'. Chạy `python scripts/make_sample_images.py` "
+            "để kiểm tra bằng ảnh hoa thật. Tạm dùng ảnh ngẫu nhiên (kết quả vô nghĩa).",
+            config.SAMPLE_DIR,
+        )
+        dummy_img = Image.fromarray(np.random.randint(0, 256, (224, 224, 3), dtype=np.uint8))
+        result = predictor.predict_image(dummy_img)
+        logger.info("Kết quả dự đoán thử: %s", result)

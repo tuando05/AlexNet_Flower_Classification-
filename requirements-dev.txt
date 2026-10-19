@@ -1,0 +1,10 @@
+# ============================================================
+# Thư viện phụ thuộc cho phát triển / kiểm thử
+# Cài đặt: pip install -r requirements-dev.txt
+# ============================================================
+-r requirements.txt
+
+pytest==9.1.1
+
+# Dùng cho fastapi.testclient.TestClient (kiểm thử API trong tests/test_api.py)
+httpx==0.28.1

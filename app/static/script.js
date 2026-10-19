@@ -17,10 +17,15 @@ document.addEventListener('DOMContentLoaded', () => {
     const confidenceBadge = document.getElementById('confidenceBadge');
     const flowerIcon = document.getElementById('flowerIcon');
     const probList = document.getElementById('probList');
+    const modelWarning = document.getElementById('modelWarning');
 
     const sampleCards = document.querySelectorAll('.sample-card');
 
     let selectedFile = null;
+
+    // Giới hạn dung lượng upload, sinh ra từ template (config.MAX_UPLOAD_SIZE_MB)
+    const MAX_UPLOAD_MB = parseFloat(dropZone.dataset.maxUploadMb || '10');
+    const MAX_UPLOAD_BYTES = MAX_UPLOAD_MB * 1024 * 1024;
 
     // Flower Icon Map
     const flowerIcons = {
@@ -34,6 +39,19 @@ document.addEventListener('DOMContentLoaded', () => {
         'daisy': 'daisy-fill',
         'lily': 'lily-fill'
     };
+
+    // Hiển thị cảnh báo nếu server báo model chưa được huấn luyện
+    function setModelWarning(isTrained) {
+        if (!modelWarning) return;
+        modelWarning.classList.toggle('hidden', isTrained);
+    }
+
+    function showError(message) {
+        alert(`Lỗi: ${message}`);
+    }
+
+    // Cảnh báo ngay khi tải trang nếu server báo chưa có model đã huấn luyện
+    setModelWarning(document.body.dataset.modelTrained !== 'false');
 
     // Drag & Drop Event Listeners
     ['dragenter', 'dragover'].forEach(eventName => {
@@ -73,7 +91,12 @@ document.addEventListener('DOMContentLoaded', () => {
     // Handle Image Selection
     function handleFileSelect(file) {
         if (!file.type.startsWith('image/')) {
-            alert('Vui lòng chọn tệp định dạng hình ảnh!');
+            showError('Vui lòng chọn tệp định dạng hình ảnh!');
+            return;
+        }
+
+        if (file.size > MAX_UPLOAD_BYTES) {
+            showError(`Ảnh ${(file.size / 1024 / 1024).toFixed(1)}MB vượt quá giới hạn ${MAX_UPLOAD_MB}MB. Vui lòng chọn ảnh nhỏ hơn.`);
             return;
         }
 
@@ -99,50 +122,27 @@ document.addEventListener('DOMContentLoaded', () => {
         resultsContent.classList.add('hidden');
     }
 
-    // Sample Image Presets
+    // Ảnh mẫu thật (server phục vụ tại /samples/*.jpg)
+    // Trước đây UI tự vẽ gradient + emoji bằng canvas nên kết quả dự đoán vô nghĩa.
     sampleCards.forEach(card => {
         card.addEventListener('click', async () => {
-            const sampleType = card.getAttribute('data-sample');
-            createSampleCanvas(sampleType);
+            const url = card.getAttribute('data-url');
+            if (!url) return;
+
+            try {
+                const response = await fetch(url);
+                if (!response.ok) {
+                    throw new Error(`Không tải được ảnh mẫu (HTTP ${response.status}).`);
+                }
+                const blob = await response.blob();
+                const filename = url.split('/').pop();
+                handleFileSelect(new File([blob], filename, { type: blob.type || 'image/jpeg' }));
+            } catch (error) {
+                console.error(error);
+                showError(error.message);
+            }
         });
     });
-
-    function createSampleCanvas(type) {
-        const canvas = document.createElement('canvas');
-        canvas.width = 300;
-        canvas.height = 300;
-        const ctx = canvas.getContext('2d');
-
-        // Draw colorful floral sample background
-        let gradient;
-        if (type === 'rose') {
-            gradient = ctx.createRadialGradient(150, 150, 20, 150, 150, 150);
-            gradient.addColorStop(0, '#F43F5E');
-            gradient.addColorStop(1, '#881337');
-        } else if (type === 'daisy') {
-            gradient = ctx.createRadialGradient(150, 150, 20, 150, 150, 150);
-            gradient.addColorStop(0, '#FDE047');
-            gradient.addColorStop(1, '#78350F');
-        } else {
-            gradient = ctx.createRadialGradient(150, 150, 20, 150, 150, 150);
-            gradient.addColorStop(0, '#34D399');
-            gradient.addColorStop(1, '#064E3B');
-        }
-
-        ctx.fillStyle = gradient;
-        ctx.fillRect(0, 0, 300, 300);
-
-        // Draw emoji icon in center
-        ctx.font = '100px serif';
-        ctx.textAlign = 'center';
-        ctx.textBaseline = 'middle';
-        ctx.fillText(flowerIcons[type] || '🌸', 150, 150);
-
-        canvas.toBlob((blob) => {
-            const file = new File([blob], `sample_${type}.png`, { type: 'image/png' });
-            handleFileSelect(file);
-        });
-    }
 
     // Handle Prediction Request
     predictBtn.addEventListener('click', async () => {
@@ -162,20 +162,22 @@ document.addEventListener('DOMContentLoaded', () => {
                 body: formData
             });
 
+            const payload = await response.json().catch(() => null);
+
             if (!response.ok) {
-                throw new Error('Lỗi máy chủ khi xử lý phân loại ảnh.');
+                // FastAPI trả chi tiết lỗi trong trường 'detail'
+                const detail = payload && payload.detail ? payload.detail : `HTTP ${response.status}`;
+                throw new Error(detail);
             }
 
-            const result = await response.json();
-
-            if (result.success) {
-                renderResults(result.data);
+            if (payload && payload.success) {
+                renderResults(payload.data);
             } else {
-                alert('Không thể nhận kết quả phân loại từ máy chủ.');
+                throw new Error('Máy chủ trả về kết quả không hợp lệ.');
             }
         } catch (error) {
             console.error(error);
-            alert(`Lỗi: ${error.message}`);
+            showError(error.message);
         } finally {
             predictBtn.disabled = false;
             btnText.classList.remove('hidden');
@@ -191,9 +193,12 @@ document.addEventListener('DOMContentLoaded', () => {
         // Render Winner Info
         const winnerKey = data.prediction;
         winnerNameVi.textContent = data.prediction_vi;
-        winnerNameEn.textContent = `${data.prediction.toUpperCase()} (Class: ${winnerKey})`;
+        winnerNameEn.textContent = `Class ID: ${winnerKey}`;
         confidenceBadge.textContent = `${data.confidence_percentage}% Confidence`;
         flowerIcon.textContent = flowerIcons[winnerKey] || '🌸';
+
+        // Cảnh báo nếu server báo model chưa được huấn luyện
+        setModelWarning(data.model_trained !== false);
 
         // Render Probability List Bars
         probList.innerHTML = '';
