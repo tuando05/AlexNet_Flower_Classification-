@@ -129,7 +129,8 @@ python -m src.pipelines.evaluator            # đánh giá trên tập test
    tự sinh ảnh ngẫu nhiên như bản cũ.
 5. **`history.json` + `training_curves.png`** tự động sau mỗi lần train.
 6. **Checkpoint gọn**: KHÔNG lưu `optimizer_state_dict` (trạng thái Adam nặng gấp ~3 lần trọng số và
-   không bao giờ dùng lại vì dự án không hỗ trợ resume training) → checkpoint từ 652MB xuống ~245MB,
+   không bao giờ dùng lại vì dự án không hỗ trợ resume training) → checkpoint từ 652MB xuống ~218MB
+   (áp dụng cho cả 3 checkpoint đã train: đã bỏ key này, giữ nguyên trọng số),
    đồng thời `load_checkpoint_data()` lọc bỏ key này khỏi metadata để không giữ hàng trăm MB tensor
    trong RAM suốt vòng đời của app web.
 
@@ -268,7 +269,7 @@ pytest -q        # 69 passed, 1 skipped  (~8 giây)
 | `test_dataloader.py` | Rào chắn thiếu split / lớp rỗng |
 | **`test_api.py`** | **Validate upload, mã lỗi 400/413, `/api/health`, `/api/samples`, ảnh mẫu** |
 
-> Test dùng `TestClient` + `FakePredictor` nên **không cần checkpoint 652MB** — bộ test chạy được cả
+> Test dùng `TestClient` + `FakePredictor` nên **không cần checkpoint 218MB** — bộ test chạy được cả
 > trên máy chưa train model.
 
 ### 6.4 Kiểm thử thủ công end-to-end (server thật + checkpoint v3)
@@ -358,8 +359,7 @@ Và toàn bộ trường hợp lỗi ở mục 6.2 đều trả đúng mã HTTP 
 | `docs/training_report.md` | Báo cáo Phase 2 chi tiết (so sánh 3 phiên bản) |
 | `REFACTOR_PLAN.md` | Kế hoạch sửa chữa 6 giai đoạn + trạng thái |
 
-> ⚠️ `checkpoints/*.pth` (652MB cho các bản đã train; bản train mới chỉ ~245MB vì không còn lưu
-> `optimizer_state_dict`), `flower_data_3classes/` và `outputs/*` đều **bị
+> ⚠️ `checkpoints/*.pth` (~218MB/bản vì không còn lưu `optimizer_state_dict`), `flower_data_3classes/` và `outputs/*` đều **bị
 > `.gitignore`** → không commit lên Git. Sau khi clone cần chạy `download_data.py` và
 > `src.pipelines.trainer` để tái tạo (kết quả có thể lệch ±1 pp do seed/GPU).
 

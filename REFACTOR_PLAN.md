@@ -172,7 +172,7 @@ Báo cáo chi tiết: **`docs/CLEANUP_REPORT.md`**
 - [x] `P6.3` Xoá 5 class + 1 id + 1 attribute HTML không được CSS/JS dùng; xoá 2 biến CSS thừa;
   xoá 26 dòng vẽ biểu đồ trùng lặp với `save_training_artifacts()` trong notebook.
 - [x] `P6.4` **Sửa lỗi thật (không chỉ dư thừa)**: checkpoint thừa `optimizer_state_dict`
-  (652MB → ~245MB), và `load_checkpoint_data()` giữ nguyên state Adam trong `metadata` khiến
+  (652MB → 218MB; cả 3 checkpoint cũ đã được bỏ key này), và `load_checkpoint_data()` giữ nguyên state Adam trong `metadata` khiến
   app web ôm hàng trăm MB tensor trong RAM → đã lọc bỏ + thêm test chống tái phát.
 - [x] `P6.5` Chuẩn hoá 14 log message tiếng Việt không dấu trong `download_data.py`/`downloader.py`.
 - [x] `P6.6` Sửa 3 chỗ tài liệu mô tả sai code (scheduler `mode='max'` → `mode='min'`,
@@ -202,7 +202,7 @@ không đổi (0.9420 / 0.9452).
 | 3 | Test + cấu trúc code | 1 ngày | ⚠️ nên có | **XONG** — 53 test pass, logging, pin version, notebook sạch |
 | 4 | Web app & UX | 0.5–1 ngày | ⚠️ nên có | **XONG** — ảnh mẫu thật, lifespan, validate upload 10MB, EXIF, health metadata (+14 test API → 68 pass) |
 | 5 | Tài liệu | 0.5 ngày | ✅ | **XONG** — viết lại `README.md`, thêm `docs/BAO_CAO.md`, rà `.gitignore` |
-| 6 | Dọn code/file thừa | 0.5 ngày | ⚠️ nên có | **XONG** — xoá ~107 dòng code chết + ~45 dòng trùng lặp, checkpoint 652MB → ~245MB (`docs/CLEANUP_REPORT.md`) |
+| 6 | Dọn code/file thừa | 0.5 ngày | ⚠️ nên có | **XONG** — xoá ~107 dòng code chết + ~45 dòng trùng lặp; checkpoint 652MB → 218MB ở cả 3 file (`docs/CLEANUP_REPORT.md`) |
 
 **Rủi ro cần biết trước:**
 - Phase 2 cần **train lại** (GPU khả dụng) → tốn thời gian; kết quả có thể khác baseline (tốt hơn hoặc xấu hơn tùy seed).

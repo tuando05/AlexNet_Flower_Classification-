@@ -5,7 +5,7 @@ Ngày: 2026-10-19 · Nhánh: `refactor/fix-project` · Phạm vi: **toàn bộ r
 > **Kết luận ngắn:** đã xoá **~107 dòng code chết** (lần quét 1) và **~45 dòng code trùng lặp**
 > (lần quét 2), 5 class/id HTML không dùng, gộp 5 file `__init__.py` từ "re-export" xuống docstring,
 > và **phát hiện 1 vấn đề thật** (không chỉ là dư thừa): mỗi checkpoint lưu thừa
-> `optimizer_state_dict` → file **652MB thay vì ~245MB**, đồng thời app web giữ hàng trăm MB tensor đó
+> `optimizer_state_dict` → file **652MB thay vì ~218MB**, đồng thời app web giữ hàng trăm MB tensor đó
 > trong RAM suốt vòng đời tiến trình. Không đổi kết quả model (vẫn 0.9420 / 0.9452), bộ test
 > **69 passed / 1 skipped**.
 
@@ -39,7 +39,7 @@ Các lệnh cụ thể ở **mục 9 (phụ lục)** để có thể chạy lạ
 | Class/id HTML không dùng | 5 class + 1 id + 1 attribute | **0** |
 | Biến CSS không dùng | 2 | **0** |
 | Dòng code trùng lặp trong notebook | 26 | **0** |
-| Kích thước checkpoint mới | 652 MB | **~245 MB** |
+| Kích thước checkpoint (mỗi bản) | 652 MB | **217,5 MB** (đã bỏ state Adam ở **cả 3 file**) |
 | RSS của app khi giữ metadata | giữ nguyên state Adam (~400MB) | **chỉ 10 key nhỏ** |
 | Test | 68 passed | **69 passed / 1 skipped** |
 
@@ -157,8 +157,25 @@ val_acc: 0.966 | arch: alexnet | trained_at: 2026-10-18T22:12:08
 ```
 - Trước: `metadata` chứa cả state Adam. **Sau: chỉ 10 key nhỏ**, model vẫn load và dự đoán đúng
   như cũ (daisy 97.33% · lily 99.99% · rose 100.00%).
-- **Checkpoint train mới sẽ chỉ còn ~245MB** (giảm ~62%). Các checkpoint cũ (652MB) vẫn load bình
-  thường vì `model_state_dict` không đổi.
+- **Checkpoint train mới sẽ chỉ còn ~218MB** (giảm ~67%).
+- Checkpoint cũ vẫn load bình thường vì `model_state_dict` không đổi → nên có thể **dọn luôn
+  state Adam bên trong 3 file đang có** (xem 5.4).
+
+### 5.4 Dọn state Adam trong 3 checkpoint đang có (đã thực hiện)
+Bỏ key `optimizer_state_dict` khỏi cả 3 file, **giữ nguyên `model_state_dict`**. Ghi an toàn: lưu ra
+`.tmp` → kiểm tra file tạm load lại được + số tensor khớp → `os.replace()` (atomic) mới thay file gốc.
+
+| File | Trước | Sau | Tiết kiệm |
+|---|---|---|---|
+| `best_alexnet_flowers.pth` (đang triển khai) | 652,5 MB | **217,5 MB** | 435,0 MB |
+| `best_alexnet_flowers_v1_scratch.pth` | 652,5 MB | **217,5 MB** | 435,0 MB |
+| `best_alexnet_flowers_v2_scratch.pth` | 652,5 MB | **217,5 MB** | 435,0 MB |
+| **Tổng** | 1957,5 MB | **652,5 MB** | **~1,28 GB** |
+
+**Kiểm chứng sau khi dọn** (`model_state_dict` 16 tensor, không mất mát gì):
+- `python -m src.pipelines.predictor` → daisy 97.33% · lily 99.99% · rose 100.00% (y hệt trước).
+- `python -m src.pipelines.evaluator` → **Accuracy 0.9420 | Macro F1 0.9452** — **trùng khớp tuyệt đối**
+  với kết quả trước khi dọn (mục 5).
 
 ---
 
@@ -170,7 +187,7 @@ Quét lớp 4 phát hiện 3 chỗ tài liệu không khớp code — đã sửa
 |---|---|---|
 | `docs/BAO_CAO.md` | `ReduceLROnPlateau(mode='max', ...)` "giảm LR khi **val_acc** chững lại" | `mode='min'` theo **val_loss** (`trainer.py`) |
 | `docs/BAO_CAO.md`, `README.md` | "thư viện trong `src/` chỉ gọi `get_logger()`" | `logging.getLogger(__name__)` — và giải thích thêm vì sao entry point chạy bằng `-m` đặt tên logger cố định (để log hiện `src.pipelines.trainer` thay vì `__main__`) |
-| `README.md`, `docs/BAO_CAO.md` | checkpoint "~684MB/phiên bản" | 652MB cho bản cũ, **~245MB** cho bản mới |
+| `README.md`, `docs/BAO_CAO.md` | checkpoint "~684MB/phiên bản" | 652MB cho bản cũ, **~218MB** sau khi bỏ state Adam |
 
 ---
 
@@ -225,25 +242,24 @@ Ghi lại để chứng minh đã xét chứ không bỏ sót:
 
 ---
 
-## 10. Việc còn lại (cần bạn quyết định — không tự xoá)
+## 10. File lớn: đã xử lý phần nào, còn lại gì
 
-Các file dưới đây **lớn** và/hoặc là bằng chứng, nên tôi không tự xoá:
+**Đã xử lý** (bạn chọn phương án 1, xem mục 5.4): bỏ state Adam khỏi cả 3 checkpoint
+→ `1957,5 MB` còn `652,5 MB`, **tiết kiệm ~1,28 GB**, kết quả model y hệt (0.9420 / 0.9452).
+
+**Còn lại** (nhỏ, hoặc là bằng chứng — không tự xoá):
 
 | File | Dung lượng | Ghi chú |
 |---|---|---|
-| `checkpoints/best_alexnet_flowers.pth` | 652 MB | **Model đang triển khai** — cần giữ |
-| `checkpoints/best_alexnet_flowers_v1_scratch.pth` | 652 MB | Chỉ dùng để đối chứng (đã có số liệu trong `docs/baseline.md`) |
-| `checkpoints/best_alexnet_flowers_v2_scratch.pth` | 652 MB | Chỉ dùng để đối chứng (đã có số liệu trong `docs/training_report.md`) |
+| `checkpoints/best_alexnet_flowers.pth` | 217,5 MB | **Model đang triển khai** — cần giữ |
+| `checkpoints/best_alexnet_flowers_v1_scratch.pth` | 217,5 MB | Chỉ dùng để đối chứng (số liệu đã có trong `docs/baseline.md`) |
+| `checkpoints/best_alexnet_flowers_v2_scratch.pth` | 217,5 MB | Chỉ dùng để đối chứng (số liệu đã có trong `docs/training_report.md`) |
 | `outputs/*.log` (6 file) | ~32 KB | Bằng chứng số cho báo cáo — nhỏ, nên giữ |
 | `.pytest_cache/`, `.ruff_cache/`, `__pycache__/` | vài MB | Cache, đã thêm vào `.gitignore`; xoá lúc nào cũng được (tự sinh lại) |
 
-**Hai lựa chọn tiết kiệm dung lượng** (không ảnh hưởng kết quả model):
-
-1. **Bỏ state Adam khỏi 3 checkpoint cũ** — giữ nguyên trọng số model, chỉ xoá key không dùng:
-   mỗi file từ 652MB → ~245MB, **tiết kiệm ~1.2 GB**, và model vẫn load/dự đoán y hệt.
-2. **Xoá 2 checkpoint đối chứng v1/v2** — tiết kiệm thêm ~1.3 GB, nhưng mất khả năng chạy lại
-   `evaluator` trên chúng để tái kiểm chứng kết luận "không hồi quy" (số liệu vẫn còn trong
-   `docs/baseline.md` và `docs/training_report.md`).
+**Bước tuỳ chọn còn bỏ ngỏ:** xoá 2 checkpoint đối chứng v1/v2 — tiết kiệm thêm ~435 MB, nhưng mất
+khả năng chạy lại `evaluator` trên chúng để tái kiểm chứng kết luận "không hồi quy" (số liệu vẫn còn
+trong `docs/baseline.md` và `docs/training_report.md`).
 
 ---
 

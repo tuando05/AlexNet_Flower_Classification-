@@ -351,11 +351,12 @@ rào chắn thiếu split, và **toàn bộ REST API** (`tests/test_api.py` — 
 
 ## 🗂️ Ghi Chú Về Artifact
 
-- `checkpoints/*.pth` (khoảng **245MB** cho bản mới — xem ghi chú bên dưới), `flower_data_3classes/`,
+- `checkpoints/*.pth` (khoảng **218MB**/bản — xem ghi chú bên dưới), `flower_data_3classes/`,
   `outputs/*` đều nằm trong `.gitignore` → **không** được commit lên Git.
 - Sau khi `git clone`, cần chạy `python download_data.py` rồi `python -m src.pipelines.trainer`
   để tái tạo dữ liệu và model (kết quả có thể lệch ±1 pp do seed/GPU).
 - Riêng 3 ảnh mẫu trong `samples/` (~23KB) **được commit** để giao diện web hoạt động ngay.
-- **Kích thước checkpoint**: bản mới chỉ ~245MB vì trainer **không còn lưu `optimizer_state_dict`**
+- **Kích thước checkpoint**: chỉ ~**218MB**/bản vì trainer **không còn lưu `optimizer_state_dict`**
   (trạng thái Adam nặng gấp ~3 lần trọng số và không bao giờ được dùng lại — dự án không hỗ trợ
-  resume training). Checkpoint cũ (652MB) vẫn load được bình thường.
+  resume training). **Cả 3 checkpoint cũ cũng đã được bỏ key này** (652MB → 218MB, tiết kiệm ~1,3 GB)
+  bằng cách giữ nguyên trọng số model; evaluator xác nhận kết quả không đổi (0.9420 / 0.9452).
