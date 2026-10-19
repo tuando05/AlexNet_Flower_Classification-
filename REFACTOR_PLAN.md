@@ -144,9 +144,19 @@ kết quả evaluator không đổi (0.9420 / 0.9452).
 
 ## 🧩 Phase 5 — Tài liệu & bàn giao (0.5 ngày)
 
-- [ ] `P5.1` Cập nhật `README.md`: cấu trúc thư mục mới, kết quả thực tế (accuracy/F1), ảnh confusion matrix, hướng dẫn chạy nhanh.
-- [ ] `P5.2` Thêm `docs/BAO_CAO.md` (bài toán, dataset, kiến trúc, siêu tham số, kết quả, hạn chế & hướng phát triển).
-- [ ] `P5.3` Rà `.gitignore`: không commit `.pth` (684MB) và dataset.
+- [x] `P5.1` Cập nhật `README.md`: cấu trúc thư mục mới, kết quả thực tế (0.9420 / 0.9452), confusion matrix dạng bảng,
+  bảng siêu tham số, hướng dẫn chạy nhanh 7 bước, bảng mã lỗi API, mục hạn chế & hướng phát triển.
+- [x] `P5.2` Thêm `docs/BAO_CAO.md`: bài toán & tiêu chí, dataset (kèm phân tích lệch lớp + sai số chuẩn),
+  kiến trúc AlexNet (57.016.131 tham số), quy trình huấn luyện, kết quả 3 phiên bản, phân tích lỗi
+  `daisy` ↔ `lily`, triển khai, kiểm thử, hạn chế & hướng phát triển, phụ lục artifact.
+- [x] `P5.3` Rà `.gitignore`: xác nhận **không** có `.pth` / dữ liệu nào bị track
+  (`git check-ignore` → `*.pth`, `flower_data_3classes/`, `outputs/*` đều khớp).
+  Phát hiện rule `!outputs/.gitkeep` là **dead rule** (file chưa từng tồn tại) → đã tạo
+  `outputs/.gitkeep` và track, để sau khi clone vẫn có sẵn thư mục `outputs/`.
+
+**Verify:** ✅ `pytest -q` → 68 pass / 1 skipped; `python -m src.pipelines.predictor` chạy trên 3 ảnh mẫu
+thật cho đúng kết quả (daisy 97.33% · lily 99.99% · rose 100%); mọi đường dẫn tài liệu trong `README.md`
+đều tồn tại.
 
 ---
 
@@ -159,7 +169,7 @@ kết quả evaluator không đổi (0.9420 / 0.9452).
 | 2 | Train lại + đánh giá | 1–1.5 ngày | ✅ | **XONG** — v3 transfer learning: 0.9420 / 0.9452 (`docs/training_report.md`) |
 | 3 | Test + cấu trúc code | 1 ngày | ⚠️ nên có | **XONG** — 53 test pass, logging, pin version, notebook sạch |
 | 4 | Web app & UX | 0.5–1 ngày | ⚠️ nên có | **XONG** — ảnh mẫu thật, lifespan, validate upload 10MB, EXIF, health metadata (+14 test API → 68 pass) |
-| 5 | Tài liệu | 0.5 ngày | ✅ | Chờ thực hiện |
+| 5 | Tài liệu | 0.5 ngày | ✅ | **XONG** — viết lại `README.md`, thêm `docs/BAO_CAO.md`, rà `.gitignore` |
 
 **Rủi ro cần biết trước:**
 - Phase 2 cần **train lại** (GPU khả dụng) → tốn thời gian; kết quả có thể khác baseline (tốt hơn hoặc xấu hơn tùy seed).

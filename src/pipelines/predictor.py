@@ -100,6 +100,8 @@ class FlowerPredictor:
 
 
 if __name__ == '__main__':
+    import glob
+
     import numpy as np
 
     from src.utils.console import setup_console
@@ -109,6 +111,27 @@ if __name__ == '__main__':
     setup_logging()
 
     predictor = FlowerPredictor()
-    dummy_img = Image.fromarray(np.random.randint(0, 256, (224, 224, 3), dtype=np.uint8))
-    result = predictor.predict_image(dummy_img)
-    logger.info("Kết quả dự đoán thử: %s", result)
+
+    # Ưu tiên chạy thử trên ảnh hoa thật trong samples/ (tạo bằng
+    # `python scripts/make_sample_images.py`). Nếu chưa có thì dùng ảnh ngẫu
+    # nhiên — kết quả khi đó chỉ để kiểm tra luồng code, không có ý nghĩa.
+    sample_paths = sorted(glob.glob(os.path.join(config.SAMPLE_DIR, '*.jpg')))
+
+    if sample_paths:
+        for sample_path in sample_paths:
+            result = predictor.predict_image(sample_path)
+            logger.info(
+                "Ảnh mẫu '%s' -> %s (%.2f%%)",
+                os.path.basename(sample_path),
+                result['prediction_vi'],
+                result['confidence_percentage'],
+            )
+    else:
+        logger.warning(
+            "Không tìm thấy ảnh mẫu trong '%s'. Chạy `python scripts/make_sample_images.py` "
+            "để kiểm tra bằng ảnh hoa thật. Tạm dùng ảnh ngẫu nhiên (kết quả vô nghĩa).",
+            config.SAMPLE_DIR,
+        )
+        dummy_img = Image.fromarray(np.random.randint(0, 256, (224, 224, 3), dtype=np.uint8))
+        result = predictor.predict_image(dummy_img)
+        logger.info("Kết quả dự đoán thử: %s", result)
