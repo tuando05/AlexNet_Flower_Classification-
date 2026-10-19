@@ -48,6 +48,26 @@ def test_load_checkpoint_data_new_format(tmp_path):
     assert 'model_state_dict' not in metadata
 
 
+def test_load_checkpoint_data_excludes_optimizer_state(tmp_path):
+    """
+    `optimizer_state_dict` không được lọt vào metadata.
+
+    Trạng thái Adam nặng gấp ~3 lần trọng số model; giữ nó trong metadata nghĩa
+    là giữ hàng trăm MB tensor trong RAM suốt vòng đời của app web.
+    """
+    model = TinyModel(3)
+    path = _save(tmp_path, 'optimizer.pth', {
+        'model_state_dict': model.state_dict(),
+        'optimizer_state_dict': {'state': {}, 'param_groups': []},
+        'epoch': 3,
+    })
+
+    _, metadata = load_checkpoint_data(path, device='cpu')
+
+    assert 'optimizer_state_dict' not in metadata
+    assert metadata['epoch'] == 3
+
+
 def test_load_checkpoint_data_legacy_format(tmp_path):
     """Checkpoint cũ chỉ chứa state_dict thuần vẫn phải load được."""
     path = _save(tmp_path, 'legacy.pth', TinyModel(3).state_dict())

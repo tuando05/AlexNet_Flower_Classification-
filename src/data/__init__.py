@@ -1,12 +1,6 @@
-from .transforms import get_transforms
-from .downloader import download_and_filter_dataset, has_existing_data
-from .dataset import prepare_flower_dataset
-from .dataloader import create_dataloaders
+"""
+Package xử lý dữ liệu (tải, dataset, dataloader, transforms).
 
-__all__ = [
-    'get_transforms',
-    'download_and_filter_dataset',
-    'has_existing_data',
-    'prepare_flower_dataset',
-    'create_dataloaders',
-]
+Chủ đích để trống: import trực tiếp, ví dụ
+`from src.data.downloader import list_images`.
+"""

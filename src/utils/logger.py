@@ -22,8 +22,3 @@ def setup_logging(level=DEFAULT_LEVEL):
         stream=sys.stdout,
         force=True,
     )
-
-
-def get_logger(name):
-    """Trả về logger theo tên module (tiện dùng khi tên module quá dài)."""
-    return logging.getLogger(name)

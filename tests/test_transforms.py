@@ -3,7 +3,6 @@
 import numpy as np
 import pytest
 import torch
-import torchvision.transforms as T
 from PIL import Image
 
 import config

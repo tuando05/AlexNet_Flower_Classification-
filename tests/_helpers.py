@@ -5,7 +5,6 @@ Tiện ích dùng chung cho test.
 nhờ đó bộ test chạy nhanh và không phụ thuộc GPU/checkpoint thật.
 """
 
-import torch
 import torch.nn as nn
 
 

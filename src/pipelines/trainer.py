@@ -161,7 +161,6 @@ def train_model(model, train_loader, val_loader, criterion, optimizer, scheduler
             torch.save({
                 'epoch': epoch + 1,
                 'model_state_dict': model.state_dict(),
-                'optimizer_state_dict': optimizer.state_dict(),
                 'val_acc': best_val_acc,
                 'classes': list(train_loader.dataset.classes),
                 'arch': 'alexnet',

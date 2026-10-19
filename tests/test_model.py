@@ -50,6 +50,5 @@ def test_pretrained_classifier_head_replaced():
 
 
 def test_config_defaults_are_consistent():
-    assert config.NUM_CLASSES == len(config.TARGET_CLASSES)
     assert set(config.CLASS_NAMES_VI) == set(config.TARGET_CLASSES)
     assert config.EARLY_STOPPING_PATIENCE >= 0

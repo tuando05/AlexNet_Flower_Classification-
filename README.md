@@ -18,7 +18,7 @@ Deep Learning **AlexNet** (PyTorch) kết hợp ứng dụng web **FastAPI** + g
 - **REST API (FastAPI)**: dự đoán từ ảnh upload, trả về xác suất của cả 3 lớp, có kiểm tra dữ liệu đầu vào.
 - **Giao diện web hiện đại**: Dark mode + Glassmorphism, kéo & thả ảnh, **3 ảnh mẫu hoa thật** bấm 1 lần để thử,
   thanh phần trăm độ tin cậy theo thời gian thực.
-- **Bộ test `pytest`**: **68 passed / 1 skipped** (~9 giây) — model, transforms, checkpoint, dataloader,
+- **Bộ test `pytest`**: **69 passed / 1 skipped** (~8 giây) — model, transforms, checkpoint, dataloader,
   predictor, downloader và API.
 - **Notebook mỏng**: `notebooks/alexnet_flower_classification.ipynb` chỉ import từ `src/`, không lặp lại logic.
 
@@ -89,6 +89,7 @@ DL/
 ├── docs/
 │   ├── baseline.md                      # Số liệu baseline trước khi sửa + tiêu chí nghiệm thu
 │   ├── training_report.md               # Báo cáo train lại & so sánh 3 phiên bản model
+│   ├── CLEANUP_REPORT.md                # Báo cáo quét & dọn code/file thừa (chi tiết)
 │   └── BAO_CAO.md                       # Báo cáo tổng hợp đồ án
 ├── notebooks/
 │   └── alexnet_flower_classification.ipynb   # Notebook mỏng, import từ src/
@@ -113,7 +114,7 @@ DL/
 │   │   └── predictor.py                 # FlowerPredictor (inference)
 │   └── utils/
 │       ├── console.py                   # Ép UTF-8 cho console Windows
-│       ├── logger.py                    # setup_logging / get_logger
+│       ├── logger.py                    # setup_logging (cấu hình log)
 │       ├── plotting.py                  # configure_matplotlib_backend()
 │       └── seed.py                      # set_seed (tái lập kết quả)
 ├── tests/                               # 8 module test + helpers (chạy: pytest -q)
@@ -308,7 +309,7 @@ curl -X POST "http://127.0.0.1:8000/api/predict" -F "file=@samples/rose.jpg"
 
 ```bash
 pytest -q
-# 68 passed, 1 skipped in ~9s
+# 69 passed, 1 skipped in ~8s
 ```
 
 Bao gồm: kiến trúc & forward pass của model, transforms/normalize, format checkpoint (cũ & mới),
@@ -322,6 +323,7 @@ rào chắn thiếu split, và **toàn bộ REST API** (`tests/test_api.py` — 
 | File | Nội dung |
 |---|---|
 | [`REFACTOR_PLAN.md`](REFACTOR_PLAN.md) | Kế hoạch 6 giai đoạn sửa chữa + trạng thái từng hạng mục |
+| [`docs/CLEANUP_REPORT.md`](docs/CLEANUP_REPORT.md) | Báo cáo quét & dọn code/file thừa (từng mục, kèm lý do giữ/xoá) |
 | [`docs/baseline.md`](docs/baseline.md) | Baseline đo trước khi sửa và tiêu chí nghiệm thu |
 | [`docs/training_report.md`](docs/training_report.md) | So sánh 3 phiên bản model + phân tích |
 | [`docs/BAO_CAO.md`](docs/BAO_CAO.md) | Báo cáo tổng hợp đồ án |
@@ -349,8 +351,11 @@ rào chắn thiếu split, và **toàn bộ REST API** (`tests/test_api.py` — 
 
 ## 🗂️ Ghi Chú Về Artifact
 
-- `checkpoints/*.pth` (~684MB/phiên bản), `flower_data_3classes/`, `outputs/*` đều nằm trong
-  `.gitignore` → **không** được commit lên Git.
+- `checkpoints/*.pth` (khoảng **245MB** cho bản mới — xem ghi chú bên dưới), `flower_data_3classes/`,
+  `outputs/*` đều nằm trong `.gitignore` → **không** được commit lên Git.
 - Sau khi `git clone`, cần chạy `python download_data.py` rồi `python -m src.pipelines.trainer`
   để tái tạo dữ liệu và model (kết quả có thể lệch ±1 pp do seed/GPU).
 - Riêng 3 ảnh mẫu trong `samples/` (~23KB) **được commit** để giao diện web hoạt động ngay.
+- **Kích thước checkpoint**: bản mới chỉ ~245MB vì trainer **không còn lưu `optimizer_state_dict`**
+  (trạng thái Adam nặng gấp ~3 lần trọng số và không bao giờ được dùng lại — dự án không hỗ trợ
+  resume training). Checkpoint cũ (652MB) vẫn load được bình thường.

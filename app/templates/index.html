@@ -41,12 +41,12 @@
         <!-- Main Content Layout -->
         <main class="main-grid">
             <!-- Left Panel: Input & Controls -->
-            <section class="panel glass-panel upload-panel">
+            <section class="glass-panel">
                 <h2 class="panel-title"><i class="fa-solid fa-cloud-arrow-up"></i> Tải Ảnh Hoa Dự Đoán</h2>
 
                 <div class="drop-zone" id="dropZone" data-max-upload-mb="{{ max_upload_mb }}">
                     <input type="file" id="fileInput" accept="image/*" class="file-input">
-                    <div class="drop-zone-content" id="dropZoneContent">
+                    <div id="dropZoneContent">
                         <div class="upload-icon-wrapper">
                             <i class="fa-solid fa-image"></i>
                         </div>
@@ -79,7 +79,7 @@
                     <h3 class="samples-title"><i class="fa-solid fa-wand-magic"></i> Hoặc chọn mẫu ảnh thử nghiệm:</h3>
                     <div class="samples-grid">
                         {% for sample in samples %}
-                        <div class="sample-card" data-sample="{{ sample.key }}" data-url="{{ sample.url }}">
+                        <div class="sample-card" data-url="{{ sample.url }}">
                             <img class="sample-img" src="{{ sample.url }}" alt="Ảnh mẫu {{ sample.label }}" loading="lazy">
                             <span>{{ sample.label }}</span>
                         </div>
@@ -90,7 +90,7 @@
             </section>
 
             <!-- Right Panel: Results & Probability Visualization -->
-            <section class="panel glass-panel results-panel">
+            <section class="glass-panel">
                 <h2 class="panel-title"><i class="fa-solid fa-square-poll-vertical"></i> Kết Quả Phân Loại</h2>
 
                 <div class="empty-state" id="emptyState">
@@ -99,9 +99,9 @@
                     <p>Hãy tải lên một bức ảnh hoa ở khung bên trái và bấm <strong>Phân Loại Ngay</strong> để nhận kết quả phân tích độ tin cậy từ AlexNet.</p>
                 </div>
 
-                <div class="results-content hidden" id="resultsContent">
+                <div class="hidden" id="resultsContent">
                     <!-- Top Prediction Winner Card -->
-                    <div class="winner-card" id="winnerCard">
+                    <div class="winner-card">
                         <div class="winner-header">
                             <span class="winner-label">Dự Đoán Chính Xác Nhất</span>
                             <span class="confidence-badge" id="confidenceBadge">98.5%</span>

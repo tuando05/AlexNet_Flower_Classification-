@@ -223,7 +223,7 @@ def test_sample_images_are_served(client):
         assert len(response.content) > 0
 
 
-def test_get_sample_images_shape(client):
+def test_get_sample_images_shape():
     for sample in app_main.get_sample_images():
         assert set(sample) == {'key', 'label', 'filename', 'url'}
         assert sample['key'] in config.TARGET_CLASSES

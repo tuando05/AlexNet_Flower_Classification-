@@ -37,19 +37,19 @@ def main():
     setup_console()
     setup_logging()
 
-    parser = argparse.ArgumentParser(description="Tai va loc du lieu Kaggle 3 loai hoa")
-    parser.add_argument("--force", action="store_true", help="Xoa du lieu cu va tai lai")
-    parser.add_argument("--target-dir", type=str, default=config.DATA_DIR, help="Thu muc dich luu du lieu")
+    parser = argparse.ArgumentParser(description="Tải và lọc dữ liệu Kaggle 3 loại hoa")
+    parser.add_argument("--force", action="store_true", help="Xóa dữ liệu cũ và tải lại")
+    parser.add_argument("--target-dir", type=str, default=config.DATA_DIR, help="Thư mục đích lưu dữ liệu")
     args = parser.parse_args()
 
     print("=" * 65)
-    print("KICH BAN TAI & TRICH XUAT BO DU LIEU HOA (KAGGLE V1)")
+    print("KỊCH BẢN TẢI & TRÍCH XUẤT BỘ DỮ LIỆU HOA (KAGGLE V1)")
     print(f"Dataset: {KAGGLE_DATASET_HANDLE}")
     print("=" * 65)
 
     success = download_and_filter_dataset(target_base_dir=args.target_dir, force=args.force)
     if not success:
-        print("[FAILED] Khong the chuan bi du lieu. Xem huong dan o thong bao phia tren.")
+        print("[THẤT BẠI] Không thể chuẩn bị dữ liệu. Xem hướng dẫn ở thông báo phía trên.")
         sys.exit(1)
 
 

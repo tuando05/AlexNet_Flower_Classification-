@@ -23,6 +23,10 @@ notebooks/.ipynb_checkpoints/
 .coverage
 htmlcov/
 
+# Cache của linter
+.ruff_cache/
+.mypy_cache/
+
 # Datasets & Data Folders
 flower_data_3classes/
 /datasets/

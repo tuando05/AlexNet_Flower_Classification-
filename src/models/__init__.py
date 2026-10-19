@@ -1,4 +1,8 @@
-from .alexnet import AlexNetFromScratch, get_alexnet_pretrained
-from .builder import build_model
+"""
+Package chứa kiến trúc model và builder.
 
-__all__ = ['AlexNetFromScratch', 'get_alexnet_pretrained', 'build_model']
+Chủ đích để trống: import trực tiếp, ví dụ
+`from src.models.alexnet import AlexNetFromScratch`.
+Trước đây file này `from .alexnet import ...` khiến chỉ cần `import src.models`
+là kéo theo cả torch + torchvision.
+"""

@@ -160,6 +160,31 @@ thật cho đúng kết quả (daisy 97.33% · lily 99.99% · rose 100%); mọi 
 
 ---
 
+## 🧹 Phase 6 — Quét & dọn code/file thừa (0.5 ngày)
+
+Báo cáo chi tiết: **`docs/CLEANUP_REPORT.md`**
+
+- [x] `P6.1` Quét 4 lớp: ruff (F/F401/F811/F841/ARG/B007/RUF100), grep symbol không có người gọi,
+  đối chiếu HTML/JS ↔ CSS (class/id mồ côi, biến `--var`, `@keyframes`), đối chiếu tài liệu ↔ code.
+- [x] `P6.2` Xoá ~107 dòng code chết: hàm `get_logger()` (không ai gọi), 5 file `__init__.py` kiểu
+  re-export (73 → 5 dòng), hằng `NUM_CLASSES` (chỉ dùng trong 1 assert luôn đúng), 2 import thừa,
+  1 biến vòng lặp thừa trong notebook.
+- [x] `P6.3` Xoá 5 class + 1 id + 1 attribute HTML không được CSS/JS dùng; xoá 2 biến CSS thừa;
+  xoá 26 dòng vẽ biểu đồ trùng lặp với `save_training_artifacts()` trong notebook.
+- [x] `P6.4` **Sửa lỗi thật (không chỉ dư thừa)**: checkpoint thừa `optimizer_state_dict`
+  (652MB → ~245MB), và `load_checkpoint_data()` giữ nguyên state Adam trong `metadata` khiến
+  app web ôm hàng trăm MB tensor trong RAM → đã lọc bỏ + thêm test chống tái phát.
+- [x] `P6.5` Chuẩn hoá 14 log message tiếng Việt không dấu trong `download_data.py`/`downloader.py`.
+- [x] `P6.6` Sửa 3 chỗ tài liệu mô tả sai code (scheduler `mode='max'` → `mode='min'`,
+  `get_logger()`, kích thước checkpoint).
+
+**Verify:** ✅ `pytest -q` → **69 pass / 1 skipped**; ruff lần 2 không còn F/B007 (các `ARG` còn lại
+là false positive có ghi chú); quét HTML/CSS lần 2 → 0 class/id mồ côi, 0 biến CSS thừa;
+`python -m src.pipelines.predictor` vẫn cho daisy 97.33% · lily 99.99% · rose 100%; kết quả model
+không đổi (0.9420 / 0.9452).
+
+---
+
 ## ⏱️ Tổng quan tiến độ
 
 | Phase | Nội dung | Thời lượng | Bắt buộc | Trạng thái |
@@ -170,7 +195,8 @@ thật cho đúng kết quả (daisy 97.33% · lily 99.99% · rose 100%); mọi 
 | 3 | Test + cấu trúc code | 1 ngày | ⚠️ nên có | **XONG** — 53 test pass, logging, pin version, notebook sạch |
 | 4 | Web app & UX | 0.5–1 ngày | ⚠️ nên có | **XONG** — ảnh mẫu thật, lifespan, validate upload 10MB, EXIF, health metadata (+14 test API → 68 pass) |
 | 5 | Tài liệu | 0.5 ngày | ✅ | **XONG** — viết lại `README.md`, thêm `docs/BAO_CAO.md`, rà `.gitignore` |
+| 6 | Dọn code/file thừa | 0.5 ngày | ⚠️ nên có | **XONG** — xoá ~107 dòng code chết, checkpoint 652MB → ~245MB (`docs/CLEANUP_REPORT.md`) |
 
 **Rủi ro cần biết trước:**
 - Phase 2 cần **train lại** (GPU khả dụng) → tốn thời gian; kết quả có thể khác baseline (tốt hơn hoặc xấu hơn tùy seed).
-- Checkpoint cũ (684MB) sẽ **không tương thích** nếu sau này đổi kiến trúc → nên đặt tên có version, ví dụ `best_alexnet_flowers_v2.pth`.
+- Checkpoint cũ (652MB) sẽ **không tương thích** nếu sau này đổi kiến trúc → nên đặt tên có version, ví dụ `best_alexnet_flowers_v2.pth`.

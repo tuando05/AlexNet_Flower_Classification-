@@ -3,6 +3,13 @@ import torch
 import config
 from src.models.alexnet import AlexNetFromScratch, get_alexnet_pretrained
 
+# Key không phải metadata mô tả model -> không trả về trong `metadata`.
+# `optimizer_state_dict` (trạng thái Adam) nặng gấp ~3 lần trọng số; nếu để lọt
+# vào `metadata` thì nó bị giữ trong RAM suốt vòng đời của FlowerPredictor
+# (app web giữ metadata của model) dù không bao giờ được dùng lại — dự án
+# không hỗ trợ resume training.
+_NON_METADATA_KEYS = ('model_state_dict', 'optimizer_state_dict')
+
 
 def build_model(use_pretrained=False, num_classes=3, device='cpu'):
     """
@@ -30,7 +37,7 @@ def load_checkpoint_data(model_path, device='cpu'):
 
     if isinstance(checkpoint, dict) and 'model_state_dict' in checkpoint:
         state_dict = checkpoint['model_state_dict']
-        metadata = {k: v for k, v in checkpoint.items() if k != 'model_state_dict'}
+        metadata = {k: v for k, v in checkpoint.items() if k not in _NON_METADATA_KEYS}
     else:
         state_dict = checkpoint
         metadata = {}

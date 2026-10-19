@@ -1,23 +1,8 @@
 """
-Export các pipeline cấp cao.
+Package chứa các pipeline ML (train / evaluate / inference).
 
-Dùng lazy import (PEP 562) để tránh việc module bị nạp sẵn khi chạy
-`python -m src.pipelines.<module>`, vốn gây RuntimeWarning từ runpy.
+Chủ đích để trống: các entry point được chạy bằng
+`python -m src.pipelines.<module>` nên chỉ cần import trực tiếp module con.
+Việc KHÔNG import sẵn trong `__init__.py` cũng tránh RuntimeWarning của runpy
+("found in sys.modules after import of package ... but prior to execution").
 """
-
-import importlib
-
-__all__ = ['train_model', 'evaluate_model', 'FlowerPredictor']
-
-_MAP = {
-    'train_model': ('src.pipelines.trainer', 'train_model'),
-    'evaluate_model': ('src.pipelines.evaluator', 'evaluate_model'),
-    'FlowerPredictor': ('src.pipelines.predictor', 'FlowerPredictor'),
-}
-
-
-def __getattr__(name):
-    if name in _MAP:
-        module_name, attr = _MAP[name]
-        return getattr(importlib.import_module(module_name), attr)
-    raise AttributeError(f"module {__name__!r} has no attribute {name!r}")

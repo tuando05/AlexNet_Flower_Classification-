@@ -82,52 +82,52 @@ def download_and_filter_dataset(target_base_dir=config.DATA_DIR, force=False):
         bool: True nếu dataset sẵn sàng sử dụng, False nếu tải thất bại.
     """
     if has_existing_data(target_base_dir) and not force:
-        logger.info("Du lieu da ton tai tai: %s", target_base_dir)
-        logger.info("Su dung co '--force' neu ban muon xoa va tai lai tu dau.")
+        logger.info("Dữ liệu đã tồn tại tại: %s", target_base_dir)
+        logger.info("Sử dụng cờ '--force' nếu bạn muốn xóa và tải lại từ đầu.")
         return True
 
     if force and os.path.isdir(target_base_dir):
-        logger.warning("Dang xoa du lieu cu tai: '%s'...", target_base_dir)
+        logger.warning("Đang xóa dữ liệu cũ tại: '%s'...", target_base_dir)
         shutil.rmtree(target_base_dir)
 
     try:
         import kagglehub
     except ModuleNotFoundError:
-        logger.error("Khong tim thay thu vien 'kagglehub'.")
-        logger.error("Vui long cai dat bang lenh: pip install kagglehub")
+        logger.error("Không tìm thấy thư viện 'kagglehub'.")
+        logger.error("Vui lòng cài đặt bằng lệnh: pip install kagglehub")
         return False
 
     try:
-        logger.info("Dang tai bo du lieu '%s' tu Kaggle...", KAGGLE_DATASET_HANDLE)
+        logger.info("Đang tải bộ dữ liệu '%s' từ Kaggle...", KAGGLE_DATASET_HANDLE)
         download_path = kagglehub.dataset_download(KAGGLE_DATASET_HANDLE)
-        logger.info("Da tai ve thu muc cache Kaggle: %s", download_path)
+        logger.info("Đã tải về thư mục cache Kaggle: %s", download_path)
     except Exception as e:
-        logger.error("Khong the tai du lieu tu Kaggle: %s", e)
+        logger.error("Không thể tải dữ liệu từ Kaggle: %s", e)
         return False
 
     v1_root = _find_v1_root(download_path)
     if not v1_root:
-        logger.error("Khong tim thay cau truc thu muc 'Training Data' trong bo du lieu Kaggle.")
+        logger.error("Không tìm thấy cấu trúc thư mục 'Training Data' trong bộ dữ liệu Kaggle.")
         return False
 
-    logger.info("Dang loc va trich xuat 3 loai hoa (Daisy, Lily, Rose)...")
+    logger.info("Đang lọc và trích xuất 3 loại hoa (Daisy, Lily, Rose)...")
     for src_split, dst_split in SPLIT_MAP.items():
         for src_cls, dst_cls in CLASS_MAP.items():
             src_dir = os.path.join(v1_root, src_split, src_cls)
             images = list_images(src_dir)
             if not images:
-                logger.warning("Khong tim thay anh cho %s/%s, bo qua.", src_split, src_cls)
+                logger.warning("Không tìm thấy ảnh cho %s/%s, bỏ qua.", src_split, src_cls)
                 continue
 
             dst_dir = os.path.join(target_base_dir, dst_split, dst_cls)
             os.makedirs(dst_dir, exist_ok=True)
             for img in images:
                 shutil.copy2(os.path.join(src_dir, img), os.path.join(dst_dir, img))
-            logger.info("  [%s] %s: %d anh", dst_split.upper(), dst_cls.capitalize(), len(images))
+            logger.info("  [%s] %s: %d ảnh", dst_split.upper(), dst_cls.capitalize(), len(images))
 
     if not has_existing_data(target_base_dir):
-        logger.error("Trich xuat du lieu that bai, khong co anh nao duoc ghi ra.")
+        logger.error("Trích xuất dữ liệu thất bại, không có ảnh nào được ghi ra.")
         return False
 
-    logger.info("Hoan thanh tai va trich xuat du lieu! Vi tri luu: %s", target_base_dir)
+    logger.info("Hoàn thành tải và trích xuất dữ liệu! Vị trí lưu: %s", target_base_dir)
     return True

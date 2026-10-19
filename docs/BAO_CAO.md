@@ -6,7 +6,7 @@
 
 > **Kết luận ngắn:** AlexNet **transfer learning** từ ImageNet đạt **Accuracy 94.20%** và
 > **Macro F1 94.52%** trên 707 ảnh test, vượt bản *from scratch* **+13,86 pp accuracy**.
-> Sản phẩm kèm REST API + giao diện web hoàn chỉnh và bộ test tự động 68 test.
+> Sản phẩm kèm REST API + giao diện web hoàn chỉnh và bộ test tự động 69 test.
 
 ---
 
@@ -98,7 +98,7 @@ Có 2 biến thể, chỉ khác nhau ở **điểm khởi tạo trọng số**:
 |---|---|---|
 | Loss | `CrossEntropyLoss` | Phân loại đa lớp, nhãn rời rạc |
 | Optimizer | `Adam(lr=1e-4, weight_decay=1e-4)` | Hội tụ nhanh, phù hợp fine-tune |
-| Scheduler | `ReduceLROnPlateau(mode='max', factor=0.5, patience=2)` | Giảm LR khi `val_acc` chững lại |
+| Scheduler | `ReduceLROnPlateau(mode='min', factor=0.5, patience=2)` | Giảm LR khi `val_loss` chững lại |
 | Early stopping | `patience = 5` epoch | Tránh overfit, tiết kiệm thời gian |
 | Chọn model | Lưu checkpoint theo **`val_acc` tốt nhất** | Không dùng test set để chọn model |
 
@@ -128,6 +128,10 @@ python -m src.pipelines.evaluator            # đánh giá trên tập test
 4. **Rào chắn dữ liệu**: báo lỗi rõ ràng nếu thiếu `train/val/test` hoặc một lớp bị rỗng, thay vì
    tự sinh ảnh ngẫu nhiên như bản cũ.
 5. **`history.json` + `training_curves.png`** tự động sau mỗi lần train.
+6. **Checkpoint gọn**: KHÔNG lưu `optimizer_state_dict` (trạng thái Adam nặng gấp ~3 lần trọng số và
+   không bao giờ dùng lại vì dự án không hỗ trợ resume training) → checkpoint từ 652MB xuống ~245MB,
+   đồng thời `load_checkpoint_data()` lọc bỏ key này khỏi metadata để không giữ hàng trăm MB tensor
+   trong RAM suốt vòng đời của app web.
 
 ---
 
@@ -207,15 +211,17 @@ src/models/   alexnet · builder
 src/pipelines/ trainer · evaluator · predictor
 src/utils/    console · logger · plotting · seed
 app/          main.py (FastAPI) · static/ · templates/
-tests/        pytest (68 passed / 1 skipped)
+tests/        pytest (69 passed / 1 skipped)
 ```
 
 **Nguyên tắc thiết kế:**
 
 - **Một nguồn sự thật duy nhất**: metadata của checkpoint quyết định `arch`, `use_pretrained`,
   thứ tự lớp — mọi module (evaluator, predictor, app) đều đọc từ đó thay vì hard-code.
-- **Library vs entry point**: thư viện trong `src/` chỉ gọi `get_logger()`; chỉ entry point gọi
-  `setup_logging()`. Nhờ vậy import thư viện không tự ý gắn log handler.
+- **Library vs entry point**: module thư viện trong `src/` chỉ gọi `logging.getLogger(__name__)` và
+  KHÔNG tự gắn handler; chỉ entry point gọi `setup_logging()`. Các entry point chạy được bằng
+  `python -m` (trainer/evaluator/predictor) thì đặt tên logger cố định để log hiện đúng tên module
+  thay vì `__main__`.
 - **Không âm thầm chịu lỗi**: thiếu dữ liệu/checkpoint → ném lỗi rõ ràng kèm gợi ý lệnh cần chạy.
 
 ### 6.2 REST API
@@ -249,7 +255,7 @@ tests/        pytest (68 passed / 1 skipped)
 ### 6.3 Kiểm thử tự động
 
 ```bash
-pytest -q        # 68 passed, 1 skipped  (~9 giây)
+pytest -q        # 69 passed, 1 skipped  (~8 giây)
 ```
 
 | Module | Nội dung kiểm thử |
@@ -262,7 +268,7 @@ pytest -q        # 68 passed, 1 skipped  (~9 giây)
 | `test_dataloader.py` | Rào chắn thiếu split / lớp rỗng |
 | **`test_api.py`** | **Validate upload, mã lỗi 400/413, `/api/health`, `/api/samples`, ảnh mẫu** |
 
-> Test dùng `TestClient` + `FakePredictor` nên **không cần checkpoint 684MB** — bộ test chạy được cả
+> Test dùng `TestClient` + `FakePredictor` nên **không cần checkpoint 652MB** — bộ test chạy được cả
 > trên máy chưa train model.
 
 ### 6.4 Kiểm thử thủ công end-to-end (server thật + checkpoint v3)
@@ -352,7 +358,8 @@ Và toàn bộ trường hợp lỗi ở mục 6.2 đều trả đúng mã HTTP 
 | `docs/training_report.md` | Báo cáo Phase 2 chi tiết (so sánh 3 phiên bản) |
 | `REFACTOR_PLAN.md` | Kế hoạch sửa chữa 6 giai đoạn + trạng thái |
 
-> ⚠️ `checkpoints/*.pth` (~684MB/phiên bản), `flower_data_3classes/` và `outputs/*` đều **bị
+> ⚠️ `checkpoints/*.pth` (652MB cho các bản đã train; bản train mới chỉ ~245MB vì không còn lưu
+> `optimizer_state_dict`), `flower_data_3classes/` và `outputs/*` đều **bị
 > `.gitignore`** → không commit lên Git. Sau khi clone cần chạy `download_data.py` và
 > `src.pipelines.trainer` để tái tạo (kết quả có thể lệch ±1 pp do seed/GPU).
 

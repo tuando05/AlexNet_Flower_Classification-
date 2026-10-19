@@ -8,3 +8,7 @@ pytest==9.1.1
 
 # Dùng cho fastapi.testclient.TestClient (kiểm thử API trong tests/test_api.py)
 httpx==0.28.1
+
+# Linter dùng để quét code thừa (xem docs/CLEANUP_REPORT.md):
+#   python -m ruff check . --select F,B007,ARG
+ruff==0.17.1
