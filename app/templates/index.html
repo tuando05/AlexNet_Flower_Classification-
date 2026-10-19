@@ -14,7 +14,7 @@
     <!-- Custom CSS -->
     <link rel="stylesheet" href="/static/style.css">
 </head>
-<body>
+<body data-model-trained="{{ 'true' if model_trained else 'false' }}">
     <div class="background-glob bg-glob-1"></div>
     <div class="background-glob bg-glob-2"></div>
     <div class="background-glob bg-glob-3"></div>
@@ -44,20 +44,26 @@
             <section class="panel glass-panel upload-panel">
                 <h2 class="panel-title"><i class="fa-solid fa-cloud-arrow-up"></i> Tải Ảnh Hoa Dự Đoán</h2>
 
-                <div class="drop-zone" id="dropZone">
+                <div class="drop-zone" id="dropZone" data-max-upload-mb="{{ max_upload_mb }}">
                     <input type="file" id="fileInput" accept="image/*" class="file-input">
                     <div class="drop-zone-content" id="dropZoneContent">
                         <div class="upload-icon-wrapper">
                             <i class="fa-solid fa-image"></i>
                         </div>
                         <p class="drop-text">Kéo & thả ảnh hoa vào đây hoặc <span class="browse-btn">Chọn tệp ảnh</span></p>
-                        <p class="drop-subtext">Hỗ trợ định dạng PNG, JPG, JPEG, BMP (Max 10MB)</p>
+                        <p class="drop-subtext">Hỗ trợ định dạng PNG, JPG, JPEG, BMP, WEBP (Tối đa {{ max_upload_mb }}MB)</p>
                     </div>
                     
                     <div class="preview-wrapper hidden" id="previewWrapper">
                         <img id="imagePreview" src="" alt="Ảnh hoa được chọn" class="image-preview">
                         <button class="remove-btn" id="removeBtn" title="Xóa ảnh"><i class="fa-solid fa-xmark"></i></button>
                     </div>
+                </div>
+
+                <!-- Cảnh báo model chưa được huấn luyện -->
+                <div class="alert-banner alert-warning hidden" id="modelWarning">
+                    <i class="fa-solid fa-triangle-exclamation"></i>
+                    <span>Chưa tìm thấy model đã huấn luyện — kết quả dự đoán sẽ không có ý nghĩa. Hãy chạy <code>python -m src.pipelines.trainer</code>.</span>
                 </div>
 
                 <div class="action-buttons">
@@ -68,23 +74,19 @@
                 </div>
 
                 <!-- Sample Images Quick Selection -->
+                {% if samples %}
                 <div class="samples-section">
                     <h3 class="samples-title"><i class="fa-solid fa-wand-magic"></i> Hoặc chọn mẫu ảnh thử nghiệm:</h3>
                     <div class="samples-grid">
-                        <div class="sample-card" data-sample="rose">
-                            <div class="sample-img-placeholder rose-bg">🌹</div>
-                            <span>Hoa Hồng</span>
+                        {% for sample in samples %}
+                        <div class="sample-card" data-sample="{{ sample.key }}" data-url="{{ sample.url }}">
+                            <img class="sample-img" src="{{ sample.url }}" alt="Ảnh mẫu {{ sample.label }}" loading="lazy">
+                            <span>{{ sample.label }}</span>
                         </div>
-                        <div class="sample-card" data-sample="daisy">
-                            <div class="sample-img-placeholder daisy-bg">🌼</div>
-                            <span>Hoa Cúc</span>
-                        </div>
-                        <div class="sample-card" data-sample="lily">
-                            <div class="sample-img-placeholder lily-bg">🪷</div>
-                            <span>Hoa Ly</span>
-                        </div>
+                        {% endfor %}
                     </div>
                 </div>
+                {% endif %}
             </section>
 
             <!-- Right Panel: Results & Probability Visualization -->

@@ -41,6 +41,10 @@ USE_PRETRAINED = True
 # Device configuration
 DEVICE = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
 
+# Web API configuration
+MAX_UPLOAD_SIZE_MB = 10
+ALLOWED_UPLOAD_EXTENSIONS = ('.jpg', '.jpeg', '.png', '.bmp', '.webp')
+
 # ImageNet Normalization Stats
 NORMALIZE_MEAN = [0.485, 0.456, 0.406]
 NORMALIZE_STD = [0.229, 0.224, 0.225]

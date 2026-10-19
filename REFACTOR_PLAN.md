@@ -128,17 +128,17 @@ kết quả evaluator không đổi (0.9420 / 0.9452).
 
 ## 🟢 Phase 4 — Web app & UX (0.5–1 ngày)
 
-- [ ] `P4.1` Thay "ảnh mẫu" vẽ bằng canvas (`script.js` — chỉ là gradient + emoji, dự đoán vô nghĩa) bằng **ảnh hoa thật**:
-  - tạo `samples/{rose,daisy,lily}.jpg`
+- [x] `P4.1` Thay "ảnh mẫu" vẽ bằng canvas (`script.js` — chỉ là gradient + emoji, dự đoán vô nghĩa) bằng **ảnh hoa thật**:
+  - tạo `samples/{rose,daisy,lily}.jpg` (script `scripts/make_sample_images.py`, có `samples/README.md` ghi nguồn)
   - thêm `GET /api/samples` + mount static `/samples`
   - dùng đúng `config.SAMPLE_DIR` (biến này hiện khai báo nhưng chưa dùng).
-- [ ] `P4.2` Chuyển `@app.on_event("startup")` (deprecated) → `lifespan` context manager.
-- [ ] `P4.3` Validate upload thật sự: giới hạn **10MB** (UI ghi có nhưng code không check), chặn file hỏng, message tiếng Việt rõ ràng.
-- [ ] `P4.4` `ImageOps.exif_transpose()` để ảnh chụp bị xoay được xử lý đúng.
-- [ ] `P4.5` `/api/health` trả thêm metadata model: `arch`, `val_acc`, `classes`, `trained_at`.
-- [ ] `P4.6` Sửa nhãn hiển thị bị lặp ở `script.js`.
+- [x] `P4.2` Chuyển `@app.on_event("startup")` (deprecated) → `lifespan` context manager.
+- [x] `P4.3` Validate upload thật sự: giới hạn **10MB** (`config.MAX_UPLOAD_SIZE_MB`, trả HTTP 413), chặn sai content-type/đuôi file/ảnh hỏng/file rỗng, message tiếng Việt rõ ràng; UI cũng chặn trước ở client.
+- [x] `P4.4` `ImageOps.exif_transpose()` để ảnh chụp bị xoay được xử lý đúng.
+- [x] `P4.5` `/api/health` trả thêm metadata model: `arch`, `use_pretrained`, `trained_at`, `best_epoch`, `best_val_acc`, `loaded_classes`, `image_size`, `max_upload_mb`.
+- [x] `P4.6` Sửa nhãn hiển thị bị lặp ở `script.js` (`ROSE (Class: rose)` → `Class ID: rose`); thêm cảnh báo khi model chưa được huấn luyện.
 
-**Verify:** bấm từng ảnh mẫu → nhận đúng kết quả tương ứng; upload file >10MB → báo lỗi rõ ràng.
+**Verify:** ✅ `pytest -q` → 68 pass / 1 skip (14 test API mới trong `tests/test_api.py`); ảnh mẫu thật phục vụ tại `/samples/*.jpg`; upload >10MB → HTTP 413 kèm thông báo tiếng Việt.
 
 ---
 
@@ -158,7 +158,7 @@ kết quả evaluator không đổi (0.9420 / 0.9452).
 | 1 | Sửa lỗi đúng/sai | 1 ngày | ✅ | **XONG** |
 | 2 | Train lại + đánh giá | 1–1.5 ngày | ✅ | **XONG** — v3 transfer learning: 0.9420 / 0.9452 (`docs/training_report.md`) |
 | 3 | Test + cấu trúc code | 1 ngày | ⚠️ nên có | **XONG** — 53 test pass, logging, pin version, notebook sạch |
-| 4 | Web app & UX | 0.5–1 ngày | ⚠️ nên có | Chờ thực hiện |
+| 4 | Web app & UX | 0.5–1 ngày | ⚠️ nên có | **XONG** — ảnh mẫu thật, lifespan, validate upload 10MB, EXIF, health metadata (+14 test API → 68 pass) |
 | 5 | Tài liệu | 0.5 ngày | ✅ | Chờ thực hiện |
 
 **Rủi ro cần biết trước:**
