@@ -15,6 +15,11 @@ Ngày: 2026-10-18 · Nhánh: `refactor/fix-project` · GPU: Quadro T1000 · torc
 | **v2** | Scratch (code mới) | False | `checkpoints/best_alexnet_flowers_v2_scratch.pth` | Train lại để kiểm chứng code |
 | **v3** | **Transfer learning** ✅ | **True** | `checkpoints/best_alexnet_flowers.pth` | Đang dùng |
 
+> ⚠️ **Cập nhật 2026-10-24:** hai checkpoint đối chứng **v1/v2 đã được xoá** để tiết kiệm ~435 MB
+> (sau khi đã bỏ `optimizer_state_dict`, mỗi file còn 217,5 MB). Số liệu trong báo cáo này lấy từ
+> log lúc train (`outputs/train_run_v2.log`, `outputs/after_fix_eval.log`...) nên **vẫn giữ nguyên
+> giá trị**; chỉ mất khả năng chạy lại `evaluator` trên chúng. Model **v3 vẫn còn** và đang triển khai.
+
 Dữ liệu & hyperparameter giữ nguyên cho cả 3: 3000 train / 1500 val / 707 test, 224×224, batch 32,
 Adam lr=1e-4 wd=1e-4, ReduceLROnPlateau(patience=2, ×0.5), 15 epoch, seed 42.
 
@@ -129,8 +134,8 @@ Lịch sử số: `outputs/history.json`
 | File | Nội dung |
 |---|---|
 | `checkpoints/best_alexnet_flowers.pth` | **Model v3 (đang dùng)** — epoch 13, val_acc 0.966, `use_pretrained=True` |
-| `checkpoints/best_alexnet_flowers_v2_scratch.pth` | Model v2 scratch (epoch 13, val_acc 0.85) |
-| `checkpoints/best_alexnet_flowers_v1_scratch.pth` | Model v1 baseline gốc |
+| `checkpoints/best_alexnet_flowers_v2_scratch.pth` | Model v2 scratch (epoch 13, val_acc 0.85) — **đã xoá 2026-10-24** |
+| `checkpoints/best_alexnet_flowers_v1_scratch.pth` | Model v1 baseline gốc — **đã xoá 2026-10-24** |
 | `outputs/history.json` | Lịch sử 15 epoch của **v3** |
 | `outputs/training_curves.png` | Biểu đồ Loss/Accuracy của **v3** |
 | `outputs/confusion_matrix.png` | Confusion matrix của **v3** trên tập test |

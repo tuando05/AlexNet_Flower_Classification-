@@ -247,19 +247,18 @@ Ghi lại để chứng minh đã xét chứ không bỏ sót:
 **Đã xử lý** (bạn chọn phương án 1, xem mục 5.4): bỏ state Adam khỏi cả 3 checkpoint
 → `1957,5 MB` còn `652,5 MB`, **tiết kiệm ~1,28 GB**, kết quả model y hệt (0.9420 / 0.9452).
 
-**Còn lại** (nhỏ, hoặc là bằng chứng — không tự xoá):
+**Còn lại**:
 
 | File | Dung lượng | Ghi chú |
 |---|---|---|
 | `checkpoints/best_alexnet_flowers.pth` | 217,5 MB | **Model đang triển khai** — cần giữ |
-| `checkpoints/best_alexnet_flowers_v1_scratch.pth` | 217,5 MB | Chỉ dùng để đối chứng (số liệu đã có trong `docs/baseline.md`) |
-| `checkpoints/best_alexnet_flowers_v2_scratch.pth` | 217,5 MB | Chỉ dùng để đối chứng (số liệu đã có trong `docs/training_report.md`) |
 | `outputs/*.log` (6 file) | ~32 KB | Bằng chứng số cho báo cáo — nhỏ, nên giữ |
 | `.pytest_cache/`, `.ruff_cache/`, `__pycache__/` | vài MB | Cache, đã thêm vào `.gitignore`; xoá lúc nào cũng được (tự sinh lại) |
 
-**Bước tuỳ chọn còn bỏ ngỏ:** xoá 2 checkpoint đối chứng v1/v2 — tiết kiệm thêm ~435 MB, nhưng mất
-khả năng chạy lại `evaluator` trên chúng để tái kiểm chứng kết luận "không hồi quy" (số liệu vẫn còn
-trong `docs/baseline.md` và `docs/training_report.md`).
+**Tiếp theo (2026-10-24):** 2 checkpoint đối chứng v1/v2 đã được **xoá** (mỗi file 217,5 MB, tiết
+kiệm thêm ~435 MB). Số liệu đối chứng vẫn còn trong `docs/baseline.md` và
+`docs/training_report.md`; chỉ mất khả năng chạy lại `evaluator` trên chúng.
+**Tổng dung lượng checkpoint hiện tại: 217,5 MB** (chỉ còn model v3 đang triển khai).
 
 ---
 

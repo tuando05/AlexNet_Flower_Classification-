@@ -349,8 +349,8 @@ Và toàn bộ trường hợp lỗi ở mục 6.2 đều trả đúng mã HTTP 
 | File | Nội dung |
 |---|---|
 | `checkpoints/best_alexnet_flowers.pth` | **Model v3 đang triển khai** (epoch 13, val_acc 0.966, pretrained) |
-| `checkpoints/best_alexnet_flowers_v2_scratch.pth` | Model v2 scratch (để đối chứng) |
-| `checkpoints/best_alexnet_flowers_v1_scratch.pth` | Model v1 baseline gốc |
+| `checkpoints/best_alexnet_flowers_v2_scratch.pth` | Model v2 scratch (để đối chứng) — **đã xoá 2026-10-24** |
+| `checkpoints/best_alexnet_flowers_v1_scratch.pth` | Model v1 baseline gốc — **đã xoá 2026-10-24** |
 | `outputs/history.json`, `outputs/training_curves.png` | Lịch sử & đồ thị huấn luyện v3 |
 | `outputs/confusion_matrix.png` | Confusion matrix v3 trên tập test |
 | `outputs/train_run_v3_pretrained.log`, `outputs/eval_run_v3_pretrained.log` | Log train/eval v3 |

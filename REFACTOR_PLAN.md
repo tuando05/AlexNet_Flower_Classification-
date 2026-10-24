@@ -85,6 +85,8 @@ Mục tiêu: biết chính xác hiện trạng đang đúng tới đâu trước
 **Verify:** ✅ **ĐẠT** — v3 (transfer learning): Accuracy 0.9420, Macro F1 0.9452, recall `lily` 0.97.
 Đầy đủ 3 phiên bản được lưu và so sánh: `best_alexnet_flowers_v1_scratch.pth`,
 `best_alexnet_flowers_v2_scratch.pth`, `best_alexnet_flowers.pth` (v3).
+*(Ngày 2026-10-24: v1/v2 đã được xoá để tiết kiệm ~435 MB; số liệu vẫn giữ trong
+`docs/training_report.md`, model v3 vẫn còn.)*
 Chi tiết & phân tích: `docs/training_report.md`.
 
 **Điểm đáng chú ý:** bản scratch train lại (v2) cho kết quả *thấp hơn* baseline (0.8034 / 0.8038)
